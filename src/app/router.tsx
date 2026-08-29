@@ -1,0 +1,26 @@
+import { Navigate, Route, Routes } from "react-router";
+import ProjectsPage from "../pages/projects/ProjectsPage";
+import DashboardPage from "../pages/dashboard/DashboardPage";
+import AppLayout from "../layouts/AppLayout";
+import MyTasksPage from "../pages/tasks/MyTasksPage";
+import LoginPage from "../pages/auth/LoginPage";
+import NotFoundPage from "../pages/errors/NotFoundPage";
+import ProjectDetailPage from "../pages/projects/ProjectDetailPage";
+
+export default function AppRouter() {
+    return (
+        <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            
+            <Route path="/" element={<AppLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="projects" element={<ProjectsPage />} />
+                <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                <Route path="tasks" element={<MyTasksPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+            </Route>
+
+        </Routes>
+    )
+}
