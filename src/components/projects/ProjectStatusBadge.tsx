@@ -1,4 +1,8 @@
-import type { ProjectStatusBadgeProps, ProjectStatus } from "../../types/projects";
+import type { ProjectStatus } from "../../types/projects";
+
+interface ProjectStatusBadgeProps {
+    status: ProjectStatus;
+}
 
 const statusStyles: Record<ProjectStatus, string> = {
     "DRAFT": "bg-gray-500",

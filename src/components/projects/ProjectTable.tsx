@@ -1,6 +1,10 @@
 import { Link } from "react-router";
-import type { ProjectTableProps } from "../../types/projects";
+import type { ProjectSummary } from "../../types/projects";
 import ProjectStatusBadge from "./ProjectStatusBadge";
+
+interface ProjectTableProps {
+    projects: ProjectSummary[];
+}
 
 export default function ProjectTable({ projects }: ProjectTableProps) {
     const headerCellClassName = "px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500";

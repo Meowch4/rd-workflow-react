@@ -1,3 +1,4 @@
+
 export type ProjectStatus = "DRAFT" | "ACTIVE" | "COMPLETED"
 
 export interface ProjectSummary {
@@ -15,12 +16,4 @@ export interface ProjectSummary {
     changeRequestCount: number;
     // 创建时间
     createdAt: string;
-}
-
-export interface ProjectTableProps {
-    projects: ProjectSummary[];
-}
-
-export interface ProjectStatusBadgeProps {
-    status: ProjectStatus;
 }
