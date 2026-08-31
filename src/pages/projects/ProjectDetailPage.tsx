@@ -1,25 +1,85 @@
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
+import { projectsData } from "../../mocks/projects";
+import ProjectStatusBadge from "../../components/projects/ProjectStatusBadge";
+import { changeRequestsData } from "../../mocks/changeRequests";
+import ChangeRequestTable from "../../components/changeRequests/ChangeRequestTable";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
+
+  const project = projectsData.find((project) => project.id === projectId);
+  
+  if (!project) {
+    return (
+      <section>
+        <Link
+          to="/projects"
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+          ← Back to Projects
+        </Link>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          Project not found
+        </h1>
+        <p className="mt-2 text-slate-500">
+          The requested project does not exist.
+        </p>
+      </section>
+    );
+  }
+
+  const changeRequests = changeRequestsData.filter((changeRequest) => changeRequest.projectId === project.id)
+
   return (
     <section>
-      <div>
-        <p className="text-sm font-medium text-blue-600">Project</p>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-          Project Detail
-        </h1>
+      <Link
+        to="/projects"
+        className="text-sm font-medium text-blue-600 hover:text-blue-700"
+      >
+        ← Back to Projects
+      </Link>
+
+      <header className="mt-4 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-blue-600">
+            {project.projectNumber}
+          </p>
+          <h1 className="mt-1 text-2xl font-semibold text-slate-900">
+            {project.name}
+          </h1>
+        </div>
+
+        <ProjectStatusBadge status={project.status} />
+      </header>
+
+      <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="font-semibold text-slate-900">Project Overview</h2>
+
+        <dl className="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <dt className="text-sm text-slate-500">Owner</dt>
+            <dd className="mt-1 font-medium text-slate-900">
+              {project.ownerName}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-sm text-slate-500">Change Requests</dt>
+            <dd className="mt-1 font-medium text-slate-900">
+              {project.changeRequestCount}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-sm text-slate-500">Created</dt>
+            <dd className="mt-1 font-medium text-slate-900">
+              {project.createdAt}
+            </dd>
+          </div>
+        </dl>
       </div>
 
-    {projectId 
-    ? (<div className="mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <span className="text-sm text-slate-500">Project ID</span>
-        <p className="mt-1 font-medium text-slate-900">{projectId}</p>
-      </div>)
-    : (<div className="mt-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <span className="text-sm text-slate-500">No Project ID</span>
-      </div>)}
-      
+      <ChangeRequestTable changeRequests={changeRequests} />
     </section>
   );
 }
