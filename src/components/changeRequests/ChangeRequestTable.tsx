@@ -1,5 +1,6 @@
 import { Table, type TableColumnsType } from "antd";
-import type { ChangeRequestSummary } from "../../types/changeRequest";
+import type { ChangeRequestStatus, ChangeRequestSummary } from "../../types/changeRequest";
+import ChangeRequestStatusBadge from "./ChangeRequestStatusBadge";
 
 interface ChangeRequestTableProps {
   changeRequests: ChangeRequestSummary[];
@@ -20,6 +21,7 @@ const columns: TableColumnsType<ChangeRequestSummary> = [
     title: "Status",
     dataIndex: "status",
     key: "status",
+    render: (status: ChangeRequestStatus) => <ChangeRequestStatusBadge status={status} />,
   },
   {
     title: "Current Step",
