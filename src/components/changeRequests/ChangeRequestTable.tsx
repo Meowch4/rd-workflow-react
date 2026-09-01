@@ -1,6 +1,7 @@
 import { Table, type TableColumnsType } from "antd";
 import type { ChangeRequestStatus, ChangeRequestSummary } from "../../types/changeRequest";
 import ChangeRequestStatusBadge from "./ChangeRequestStatusBadge";
+import { Link } from "react-router";
 
 interface ChangeRequestTableProps {
   changeRequests: ChangeRequestSummary[];
@@ -11,6 +12,14 @@ const columns: TableColumnsType<ChangeRequestSummary> = [
     title: "Request Number",
     dataIndex: "requestNumber",
     key: "requestNumber",
+    render: (_, changeRequest) => (
+      <Link
+        to={`/projects/${changeRequest.projectId}/change-requests/${changeRequest.id}`}
+        className="font-medium text-blue-600 hover:text-blue-700"
+      >
+        {changeRequest.requestNumber}
+      </Link>
+    ),
   },
   {
     title: "Title",
