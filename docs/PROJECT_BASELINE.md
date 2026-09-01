@@ -143,3 +143,46 @@ For important choices, record:
 
 Likely records include server-state ownership, template-instance separation, parameter snapshots, backend authorization, component boundaries, hook extraction, and evidence-based performance optimization.
 
+## 12. AI-assisted learning and collaboration
+
+These rules supplement the existing guided-development rules. Where the wording conflicts, this section takes precedence. It does not change the product goal, business model, or frontend-showcase progress baseline.
+
+### Separate implementation work from cognitive work
+
+- AI may directly generate or rapidly implement repetitive, mechanical, or low-cognitive-value work such as Tailwind styling, repeated JSX, mock data, simple type boilerplate, routine Ant Design configuration, and obvious repetition.
+- Important code does not have to be handwritten by the learner. AI may propose or implement React state ownership, data flow, component boundaries, hooks, workflow transitions, permission logic, data models, and form validation, provided the learner participates in key decisions and builds an accurate mental model.
+- The learning objective is not memorizing implementation syntax. For important features, the learner should be able to explain the problem, data flow, state owner, control flow, changed files, design trade-offs, correctness criteria, and likely debugging entry points.
+
+### Let architecture and specifications converge through implementation
+
+Use an iterative loop:
+
+`current requirements and understanding -> initial design -> implementation -> run, test, and use -> feedback -> revise rules or architecture -> implement again`
+
+Implementation is also an experiment for discovering unknown requirements, incorrect assumptions, and architecture problems. Do not attempt to finish the entire architecture before building, and do not preserve an early decision merely because it was previously documented.
+
+### Avoid understanding debt
+
+- Do not generate changes whose conceptual scope grows much faster than the learner's understanding.
+- Split complex work into units with meaningful business or architectural boundaries, not arbitrary file counts or line counts.
+- A unit may be implemented quickly, but after completion the learner should understand what changed, why it changed, and how to verify it.
+
+### Review according to risk and cognitive value
+
+- Review styling, mechanical configuration, boilerplate, and repetition quickly.
+- Focus review attention on business logic, state transitions, permissions, data transformations, boundary cases, and tests.
+- For a large diff, first explain why the requirement affects those areas rather than reading every line with equal weight.
+- AI output is a proposal, not a source of correctness. Validate it against requirements, business rules, runtime behavior, tests, and debugging evidence. Encourage questions about alternatives, counterexamples, simpler solutions, and trade-offs.
+
+### Treat debugging and feedback as core learning
+
+- When a problem appears, first ask the learner to identify the likely layer, observable symptoms, and useful inspection points when that exercise has learning value.
+- Provide progressively stronger help as needed instead of immediately giving every final fix or leaving the learner blocked on low-value friction.
+
+### Maintain an appropriately chunked pace
+
+- Do not return to line-by-line teaching, but do not generate hundreds or thousands of lines in one unexplained change.
+- Move quickly through simple and repeated work. Slow down for important React, TypeScript, web, and engineering concepts when they first appear.
+- Do not repeatedly teach concepts that the learner has already demonstrated.
+- Keep each step focused on one or two questions with current value.
+- React frontend engineering and the RD Workflow frontend showcase remain the first priority. Architecture, full-stack design, and AI-coding discussion must support that goal rather than replacing it.
