@@ -1,7 +1,9 @@
 import { Link, useParams } from "react-router";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
+import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { changeRequestsData } from "../../mocks/changeRequests";
 import { projectsData } from "../../mocks/projects";
+import { workflowStepsData } from "../../mocks/workflowSteps";
 
 export default function ChangeRequestDetailPage() {
   const { projectId, changeRequestId } = useParams();
@@ -34,6 +36,11 @@ export default function ChangeRequestDetailPage() {
       </section>
     );
   }
+
+  // 根据 changeRequestId 过滤出对应的 workflowSteps
+  const workflowSteps = workflowStepsData.filter(
+    (step) => step.changeRequestId === changeRequest.id,
+  );
 
   return (
     <section>
@@ -88,6 +95,8 @@ export default function ChangeRequestDetailPage() {
           </div>
         </dl>
       </div>
+
+      <WorkflowTimeline steps={workflowSteps} />
     </section>
   );
 }
