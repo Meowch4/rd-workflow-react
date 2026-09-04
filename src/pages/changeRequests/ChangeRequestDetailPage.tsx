@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
+import ParameterForm from "../../components/parameters/ParameterForm";
+import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { changeRequestsData } from "../../mocks/changeRequests";
+import { parameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
 import { workflowStepsData } from "../../mocks/workflowSteps";
+import type { EquipmentParameters } from "../../types/parameters";
 
 export default function ChangeRequestDetailPage() {
   const { projectId, changeRequestId } = useParams();
+  const [parameterSnapshots, setParameterSnapshots] = useState(parameterSnapshotsData);
 
   const project = projectsData.find((item) => item.id === projectId);
   const changeRequest = changeRequestsData.find(
@@ -41,6 +47,15 @@ export default function ChangeRequestDetailPage() {
   const workflowSteps = workflowStepsData.filter(
     (step) => step.changeRequestId === changeRequest.id,
   );
+  const currentChangeRequestId = changeRequest.id;
+  const savedParameters = parameterSnapshots[currentChangeRequestId];
+
+  function handleParameterSave(parameters: EquipmentParameters) {
+    setParameterSnapshots((current) => ({
+      ...current,
+      [currentChangeRequestId]: parameters,
+    }));
+  }
 
   return (
     <section>
@@ -97,6 +112,12 @@ export default function ChangeRequestDetailPage() {
       </div>
 
       <WorkflowTimeline steps={workflowSteps} />
+      <ParameterSummary parameters={savedParameters} />
+      <ParameterForm
+        key={currentChangeRequestId}
+        savedParameters={savedParameters}
+        onSave={handleParameterSave}
+      />
     </section>
   );
 }
