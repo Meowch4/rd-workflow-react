@@ -153,6 +153,25 @@ These rules supplement the existing guided-development rules. Where the wording 
 - Important code does not have to be handwritten by the learner. AI may propose or implement React state ownership, data flow, component boundaries, hooks, workflow transitions, permission logic, data models, and form validation, provided the learner participates in key decisions and builds an accurate mental model.
 - The learning objective is not memorizing implementation syntax. For important features, the learner should be able to explain the problem, data flow, state owner, control flow, changed files, design trade-offs, correctness criteria, and likely debugging entry points.
 
+### Design checkpoints for new core concepts
+
+- Before fully implementing a first-time core business component or a new React mental model, hold a short design checkpoint with one to three genuinely important questions for the learner to judge.
+- Explain enough context and trade-offs for an informed choice, then wait for the learner's confirmation before implementing the unit. Merely announcing a design or asking questions after implementation does not satisfy this checkpoint.
+- Design confirmation does not by itself mean that AI should immediately generate the complete core implementation. Continue with an implementation checkpoint when the feature contains a new, high-value implementation pattern.
+- For patterns the learner has already demonstrated understanding of, skip the checkpoint and proceed quickly within the agreed scope.
+- This refines the implementation permissions above: do not abruptly turn the learner into a passive reviewer, and do not enforce a fixed human-versus-AI code-writing ratio. Preserve participation in design decisions.
+
+### Implementation checkpoints for new core patterns
+
+- After the design checkpoint, identify the single implementation point with the highest learning value, such as state organization, derived state, a data transformation, event-handler control flow, parent-child data flow, validation, workflow transitions, or permission decisions.
+- Before showing the final implementation for that point, ask the learner to make a judgment, describe pseudocode or data flow, predict the control flow, or implement one small core section. Then review the learner's reasoning and address mistakes before completing the remaining implementation.
+- Before generating code, state which mechanical parts AI will generate, which one implementation point is reserved for the learner, and why that point is worth thinking through independently.
+- Keep each implementation checkpoint small. Do not require the learner to handwrite boilerplate, Tailwind styles, routine Ant Design configuration, repeated JSX, mock data, or simple type declarations.
+- Use only decisions that naturally exist in the feature. Do not create artificial TODOs or awkward architecture for teaching purposes. If a feature contains no valuable new pattern, implement it directly.
+- Skip the implementation checkpoint when the learner has already demonstrated the same pattern. State which earlier feature it resembles and proceed quickly.
+- Treat a pattern as learned when the learner can explain its data flow, state owner, control flow, and design reason; identify where a small requirement change belongs; and rebuild a solution to a similar problem with documentation or AI assistance. Memorizing a full component or third-party API is not required.
+- After implementation, explain only the genuinely new difficulties, provide one to three runtime checks, and occasionally use a small transfer exercise to check whether the mental model applies beyond the current code.
+
 ### Let architecture and specifications converge through implementation
 
 Use an iterative loop:
@@ -184,5 +203,6 @@ Implementation is also an experiment for discovering unknown requirements, incor
 - Do not return to line-by-line teaching, but do not generate hundreds or thousands of lines in one unexplained change.
 - Move quickly through simple and repeated work. Slow down for important React, TypeScript, web, and engineering concepts when they first appear.
 - Do not repeatedly teach concepts that the learner has already demonstrated.
+- After each implementation, identify and explain its main new learning points or difficulties. For familiar patterns, reference the earlier feature with the same pattern instead of repeating the explanation.
 - Keep each step focused on one or two questions with current value.
 - React frontend engineering and the RD Workflow frontend showcase remain the first priority. Architecture, full-stack design, and AI-coding discussion must support that goal rather than replacing it.
