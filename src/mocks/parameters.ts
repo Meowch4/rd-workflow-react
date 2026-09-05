@@ -1,7 +1,7 @@
 import type { EquipmentParameters } from "../types/parameters";
 
 // key是 changeRequestId，value是对应的 EquipmentParameters
-export const parameterSnapshotsData: Record<string, EquipmentParameters> = {
+export const originalParameterSnapshotsData: Record<string, EquipmentParameters> = {
   "cr-001": { model: "CX-400", powerKw: 45, weightKg: 820, minTemperatureC: -10, maxTemperatureC: 45 },
   "cr-002": { model: "EC-220", powerKw: 30, weightKg: 640, minTemperatureC: -5, maxTemperatureC: 40 },
   "cr-003": { model: "EV-180", powerKw: 22, weightKg: 480, minTemperatureC: 0, maxTemperatureC: 38 },

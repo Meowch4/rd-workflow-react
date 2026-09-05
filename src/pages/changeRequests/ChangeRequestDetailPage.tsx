@@ -2,18 +2,30 @@ import { useState } from "react";
 import { Link, useParams } from "react-router";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
 import ParameterForm from "../../components/parameters/ParameterForm";
+import ParameterChanges from "../../components/parameters/ParameterChanges";
 import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { changeRequestsData } from "../../mocks/changeRequests";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
-import { parameterSnapshotsData } from "../../mocks/parameters";
+import { originalParameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
 import { workflowStepsData } from "../../mocks/workflowSteps";
 import type { EquipmentParameters } from "../../types/parameters";
 
+function createEditableParameterSnapshots(): Record<string, EquipmentParameters> {
+  return Object.fromEntries(
+    Object.entries(originalParameterSnapshotsData).map(([id, parameters]) => [
+      id,
+      { ...parameters },
+    ]),
+  );
+}
+
 export default function ChangeRequestDetailPage() {
   const { projectId, changeRequestId } = useParams();
-  const [parameterSnapshots, setParameterSnapshots] = useState(parameterSnapshotsData);
+  const [parameterSnapshots, setParameterSnapshots] = useState(
+    createEditableParameterSnapshots,
+  );
 
   const project = projectsData.find((item) => item.id === projectId);
   const changeRequest = changeRequestsData.find(
@@ -49,6 +61,8 @@ export default function ChangeRequestDetailPage() {
     (step) => step.changeRequestId === changeRequest.id,
   );
   const currentChangeRequestId = changeRequest.id;
+  const originalParameters =
+    originalParameterSnapshotsData[currentChangeRequestId];
   const savedParameters = parameterSnapshots[currentChangeRequestId];
 
   function handleParameterSave(parameters: EquipmentParameters) {
@@ -114,6 +128,10 @@ export default function ChangeRequestDetailPage() {
 
       <WorkflowTimeline steps={workflowSteps} />
       <ParameterSummary parameters={savedParameters} />
+      <ParameterChanges
+        original={originalParameters}
+        current={savedParameters}
+      />
       <ParameterForm
         key={currentChangeRequestId}
         savedParameters={savedParameters}

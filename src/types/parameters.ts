@@ -13,3 +13,9 @@ export interface EquipmentTemplate {
   name: string;
   parameters: EquipmentParameters;
 }
+
+export interface ParameterChange {
+  field: keyof EquipmentParameters;
+  before: string | number;
+  after: string | number;
+}
