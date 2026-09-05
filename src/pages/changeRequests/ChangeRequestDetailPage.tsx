@@ -4,8 +4,10 @@ import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequ
 import ParameterForm from "../../components/parameters/ParameterForm";
 import ParameterChanges from "../../components/parameters/ParameterChanges";
 import ParameterSummary from "../../components/parameters/ParameterSummary";
+import WorkflowActionPanel from "../../components/workflow/WorkflowActionPanel";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { changeRequestsData } from "../../mocks/changeRequests";
+import { currentUserData } from "../../mocks/currentUser";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import { originalParameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
@@ -23,12 +25,14 @@ function createEditableParameterSnapshots(): Record<string, EquipmentParameters>
 
 export default function ChangeRequestDetailPage() {
   const { projectId, changeRequestId } = useParams();
+  const [changeRequests, setChangeRequests] = useState(changeRequestsData);
+  const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
   const [parameterSnapshots, setParameterSnapshots] = useState(
     createEditableParameterSnapshots,
   );
 
   const project = projectsData.find((item) => item.id === projectId);
-  const changeRequest = changeRequestsData.find(
+  const changeRequest = changeRequests.find(
     (item) =>
       item.id === changeRequestId && item.projectId === projectId,
   );
@@ -57,8 +61,11 @@ export default function ChangeRequestDetailPage() {
   }
 
   // 根据 changeRequestId 过滤出对应的 workflowSteps
-  const workflowSteps = workflowStepsData.filter(
+  const currentWorkflowSteps = workflowSteps.filter(
     (step) => step.changeRequestId === changeRequest.id,
+  );
+  const currentStep = currentWorkflowSteps.find(
+    (step) => step.status === "PROCESSING",
   );
   const currentChangeRequestId = changeRequest.id;
   const originalParameters =
@@ -70,6 +77,47 @@ export default function ChangeRequestDetailPage() {
       ...current,
       [currentChangeRequestId]: parameters,
     }));
+  }
+
+  function handleApprove() {
+    const currentStepIndex = currentWorkflowSteps.findIndex(
+      (step) => step.status === "PROCESSING",
+    );
+    if (currentStepIndex === -1) return;
+
+    const stepToApprove = currentWorkflowSteps[currentStepIndex];
+    if (stepToApprove.assigneeId !== currentUserData.id) return;
+
+    const nextStep = currentWorkflowSteps[currentStepIndex + 1];
+    if (nextStep && nextStep.status !== "PENDING") return;
+
+    const approvedAt = new Date().toISOString();
+
+    setWorkflowSteps((current) =>
+      current.map((step) => {
+        if (step.id === stepToApprove.id) {
+          return { ...step, status: "APPROVED", completedAt: approvedAt };
+        }
+        if (step.id === nextStep?.id) {
+          return { ...step, status: "PROCESSING" };
+        }
+        return step;
+      }),
+    );
+
+    setChangeRequests((current) =>
+      current.map((request) =>
+        request.id === currentChangeRequestId
+          ? {
+              ...request,
+              status: nextStep ? "IN_REVIEW" : "COMPLETED",
+              currentStepName: nextStep?.name ?? "Completed",
+              currentAssigneeName: nextStep?.assigneeName ?? null,
+              updatedAt: approvedAt,
+            }
+          : request,
+      ),
+    );
   }
 
   return (
@@ -126,7 +174,12 @@ export default function ChangeRequestDetailPage() {
         </dl>
       </div>
 
-      <WorkflowTimeline steps={workflowSteps} />
+      <WorkflowTimeline steps={currentWorkflowSteps} />
+      <WorkflowActionPanel
+        currentStep={currentStep}
+        currentUser={currentUserData}
+        onApprove={handleApprove}
+      />
       <ParameterSummary parameters={savedParameters} />
       <ParameterChanges
         original={originalParameters}
