@@ -5,6 +5,7 @@ import ParameterForm from "../../components/parameters/ParameterForm";
 import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { changeRequestsData } from "../../mocks/changeRequests";
+import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import { parameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
 import { workflowStepsData } from "../../mocks/workflowSteps";
@@ -116,6 +117,7 @@ export default function ChangeRequestDetailPage() {
       <ParameterForm
         key={currentChangeRequestId}
         savedParameters={savedParameters}
+        templates={equipmentTemplatesData}
         onSave={handleParameterSave}
       />
     </section>

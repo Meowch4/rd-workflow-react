@@ -1,8 +1,9 @@
 import { useState, type ChangeEvent, type SubmitEvent } from "react";
-import type { EquipmentParameters } from "../../types/parameters";
+import type { EquipmentParameters, EquipmentTemplate } from "../../types/parameters";
 
 interface ParameterFormProps {
   savedParameters: EquipmentParameters;
+  templates: EquipmentTemplate[];
   onSave: (parameters: EquipmentParameters) => void;
 }
 
@@ -43,10 +44,20 @@ function validateDraft(draft: ParameterDraft): ParameterErrors {
 }
 
 // 入参是已保存参数和一个回调函数，让父组件能保存更改后的参数
-export default function ParameterForm({ savedParameters, onSave }: ParameterFormProps) {
+export default function ParameterForm({ savedParameters, templates, onSave }: ParameterFormProps) {
   // 草稿初始值用函数生成
   const [draft, setDraft] = useState<ParameterDraft>(() => createDraft(savedParameters));
   const [errors, setErrors] = useState<ParameterErrors>({});
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
+
+  function handleLoadTemplate() {
+    if (!selectedTemplate) return;
+
+    // 复用转换函数创建独立草稿；旧错误不再对应这份新草稿。
+    setDraft(createDraft(selectedTemplate.parameters));
+    setErrors({});
+  }
 
   // input的onChange事件处理函数，更新草稿状态
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
@@ -80,6 +91,39 @@ export default function ParameterForm({ savedParameters, onSave }: ParameterForm
       <p className="mt-1 text-sm text-slate-500">Changes are saved only after validation passes.</p>
 
       <form className="mt-6" noValidate onSubmit={handleSubmit}>
+        <div className="mb-6 rounded-lg bg-slate-50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="flex-1 text-sm font-medium text-slate-700">
+              Equipment template
+              <select
+                className={inputClassName}
+                value={selectedTemplateId}
+                onChange={(event) => setSelectedTemplateId(event.currentTarget.value)}
+                disabled={templates.length === 0}
+              >
+                <option value="">
+                  {templates.length === 0 ? "No templates available" : "Select a template"}
+                </option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={handleLoadTemplate}
+              disabled={!selectedTemplate}
+              className="rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-transparent"
+            >
+              Load template
+            </button>
+          </div>
+          <p className="mt-2 text-sm text-slate-500">
+            Loading replaces your unsaved inputs. Review the values, then save to confirm.
+          </p>
+        </div>
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="text-sm font-medium text-slate-700 sm:col-span-2">
             Model
