@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useOutletContext, useParams } from "react-router";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
 import ParameterForm from "../../components/parameters/ParameterForm";
 import ParameterChanges from "../../components/parameters/ParameterChanges";
@@ -7,13 +7,14 @@ import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowActionPanel from "../../components/workflow/WorkflowActionPanel";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { changeRequestsData } from "../../mocks/changeRequests";
-import { currentUserData } from "../../mocks/currentUser";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import { originalParameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
 import { workflowStepsData } from "../../mocks/workflowSteps";
 import type { EquipmentParameters } from "../../types/parameters";
+import type { AppOutletContext } from "../../types/user";
 
+// 用mock data创建一个可编辑的parameterSnapshots对象，避免直接修改原始数据
 function createEditableParameterSnapshots(): Record<string, EquipmentParameters> {
   return Object.fromEntries(
     Object.entries(originalParameterSnapshotsData).map(([id, parameters]) => [
@@ -24,7 +25,10 @@ function createEditableParameterSnapshots(): Record<string, EquipmentParameters>
 }
 
 export default function ChangeRequestDetailPage() {
+  // 从url读取projectId
   const { projectId, changeRequestId } = useParams();
+  // 从OutletContext中获取当前用户信息
+  const { currentUser } = useOutletContext<AppOutletContext>();
   const [changeRequests, setChangeRequests] = useState(changeRequestsData);
   const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
   const [parameterSnapshots, setParameterSnapshots] = useState(
@@ -39,6 +43,7 @@ export default function ChangeRequestDetailPage() {
 
   const projectPath = project ? `/projects/${project.id}` : "/projects";
 
+  // 如果没找到projectId对应的项目或者没找到changeRequest
   if (!project || !changeRequest) {
     return (
       <section>
@@ -72,13 +77,15 @@ export default function ChangeRequestDetailPage() {
     originalParameterSnapshotsData[currentChangeRequestId];
   const savedParameters = parameterSnapshots[currentChangeRequestId];
 
+  // 传给ParameterForm组件的handleSave函数，处理参数保存逻辑
   function handleParameterSave(parameters: EquipmentParameters) {
     setParameterSnapshots((current) => ({
       ...current,
       [currentChangeRequestId]: parameters,
     }));
   }
-
+  
+  // 传给Approve按钮的handleApprove函数，处理审批通过逻辑
   function handleApprove() {
     const currentStepIndex = currentWorkflowSteps.findIndex(
       (step) => step.status === "PROCESSING",
@@ -86,7 +93,7 @@ export default function ChangeRequestDetailPage() {
     if (currentStepIndex === -1) return;
 
     const stepToApprove = currentWorkflowSteps[currentStepIndex];
-    if (stepToApprove.assigneeId !== currentUserData.id) return;
+    if (stepToApprove.assigneeId !== currentUser.id) return;
 
     const nextStep = currentWorkflowSteps[currentStepIndex + 1];
     if (nextStep && nextStep.status !== "PENDING") return;
@@ -177,7 +184,7 @@ export default function ChangeRequestDetailPage() {
       <WorkflowTimeline steps={currentWorkflowSteps} />
       <WorkflowActionPanel
         currentStep={currentStep}
-        currentUser={currentUserData}
+        currentUser={currentUser}
         onApprove={handleApprove}
       />
       <ParameterSummary parameters={savedParameters} />

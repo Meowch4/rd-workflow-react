@@ -1,6 +1,13 @@
+import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
+import UserSwitcher from "../components/users/UserSwitcher";
+import { defaultCurrentUserId, usersData } from "../mocks/currentUser";
 
 export default function AppLayout() {
+    const [currentUserId, setCurrentUserId] = useState(defaultCurrentUserId);
+    const currentUser =
+      usersData.find((user) => user.id === currentUserId) ?? usersData[0];
+
     const getNavLinkClassName = ({ isActive }: { isActive: boolean }) => {
         const baseClassName = 'rounded-md px-3 py-2 text-sm font-medium transition-colors';
 
@@ -41,14 +48,19 @@ export default function AppLayout() {
       </aside>
 
       <div className="flex flex-col min-w-0 flex-1">
-        <header className="flex h-16 items-center border-b border-slate-200 bg-white px-6">
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
           <span className="text-sm font-medium text-slate-700">
             研发项目管理平台
           </span>
+          <UserSwitcher
+            users={usersData}
+            currentUserId={currentUserId}
+            onUserChange={setCurrentUserId}
+          />
         </header>
 
         <main className="flex-1 p-6">
-            <Outlet />
+            <Outlet context={{ currentUser }} />
         </main>
       </div>
     </div>
