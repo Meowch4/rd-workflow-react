@@ -66,6 +66,12 @@ export default function WorkflowTimeline({ steps }: WorkflowTimelineProps) {
                     ? `${stepStatusLabels[step.status]} · ${step.completedAt}`
                     : stepStatusLabels[step.status]}
                 </p>
+                {/* 显示reject原因 */}
+                {step.status === "REJECTED" && step.comment ? (
+                  <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-red-700">
+                    Reason: {step.comment}
+                  </p>
+                ) : null}
               </div>
             ),
           }))}

@@ -13,6 +13,8 @@ import { projectsData } from "../../mocks/projects";
 import { workflowStepsData } from "../../mocks/workflowSteps";
 import type { EquipmentParameters } from "../../types/parameters";
 import type { AppOutletContext } from "../../types/user";
+import type { WorkflowStepSummary } from "../../types/workflow";
+import { getParameterChanges } from "../../utils/parameterChanges";
 
 // 用mock data创建一个可编辑的parameterSnapshots对象，避免直接修改原始数据
 function createEditableParameterSnapshots(): Record<string, EquipmentParameters> {
@@ -24,8 +26,27 @@ function createEditableParameterSnapshots(): Record<string, EquipmentParameters>
   );
 }
 
+// 为已经处于返工状态的 mock 数据保留“被驳回时”的参数。
+function createRejectedParameterSnapshots(): Record<
+  string,
+  EquipmentParameters
+> {
+  return changeRequestsData.reduce<Record<string, EquipmentParameters>>(
+    (snapshots, request) => {
+      const parameters = originalParameterSnapshotsData[request.id];
+
+      if (request.status === "REWORK" && parameters) {
+        snapshots[request.id] = { ...parameters };
+      }
+
+      return snapshots;
+    },
+    {},
+  );
+}
+
 export default function ChangeRequestDetailPage() {
-  // 从url读取projectId
+  // 从url读取projectId和changeRequestId
   const { projectId, changeRequestId } = useParams();
   // 从OutletContext中获取当前用户信息
   const { currentUser } = useOutletContext<AppOutletContext>();
@@ -33,6 +54,9 @@ export default function ChangeRequestDetailPage() {
   const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
   const [parameterSnapshots, setParameterSnapshots] = useState(
     createEditableParameterSnapshots,
+  );
+  const [rejectedParameterSnapshots, setRejectedParameterSnapshots] = useState(
+    createRejectedParameterSnapshots,
   );
 
   const project = projectsData.find((item) => item.id === projectId);
@@ -65,10 +89,11 @@ export default function ChangeRequestDetailPage() {
     );
   }
 
-  // 根据 changeRequestId 过滤出对应的 workflowSteps
+  // 当前 changeRequestId 对应的 workflowSteps
   const currentWorkflowSteps = workflowSteps.filter(
     (step) => step.changeRequestId === changeRequest.id,
   );
+  // 当前状态是PROCESSING的workflowStep，表示当前正在处理的步骤
   const currentStep = currentWorkflowSteps.find(
     (step) => step.status === "PROCESSING",
   );
@@ -76,6 +101,14 @@ export default function ChangeRequestDetailPage() {
   const originalParameters =
     originalParameterSnapshotsData[currentChangeRequestId];
   const savedParameters = parameterSnapshots[currentChangeRequestId];
+  const rejectedParameters =
+    rejectedParameterSnapshots[currentChangeRequestId];
+  const latestRejectedStep = [...currentWorkflowSteps]
+    .reverse()
+    .find((step) => step.status === "REJECTED");
+  const canResubmit = rejectedParameters
+    ? getParameterChanges(rejectedParameters, savedParameters).length > 0
+    : false;
 
   // 传给ParameterForm组件的handleSave函数，处理参数保存逻辑
   function handleParameterSave(parameters: EquipmentParameters) {
@@ -125,6 +158,141 @@ export default function ChangeRequestDetailPage() {
           : request,
       ),
     );
+  }
+
+  function handleResubmit() {
+    if (!changeRequest || changeRequest.status !== "REWORK") return;
+    if (!rejectedParameters) return;
+    if (getParameterChanges(rejectedParameters, savedParameters).length === 0)
+      return;
+
+    // 找到当前正在进行的step的索引
+    const reworkStepIndex = currentWorkflowSteps.findIndex(
+      (step) => step.status === "PROCESSING",
+    );
+    if (reworkStepIndex === -1) return;
+
+    const reworkStepToSubmit = currentWorkflowSteps[reworkStepIndex];
+    if (reworkStepToSubmit.assigneeId !== currentUser.id) return;
+
+    // 找到离Rework这步前面最近的被Reject的step，作为新建Review step的模板
+    const rejectedReviewStep = currentWorkflowSteps
+      .slice(0, reworkStepIndex)
+      .reverse()
+      .find((step) => step.status === "REJECTED");
+    if (!rejectedReviewStep) return;
+
+    const resubmittedAt = new Date().toISOString();
+    const newReviewStep: WorkflowStepSummary = {
+      id: `${currentChangeRequestId}-review-${Date.now()}`,
+      changeRequestId: currentChangeRequestId,
+      name: rejectedReviewStep.name,
+      assigneeId: rejectedReviewStep.assigneeId,
+      assigneeName: rejectedReviewStep.assigneeName,
+      status: "PROCESSING",
+      completedAt: null,
+      comment: null,
+    };
+
+    // 依然把原来的step一变二，插入一个新的Review step
+    setWorkflowSteps((current) =>
+      current.flatMap((step) =>
+        step.id === reworkStepToSubmit.id
+          ? [
+              {
+                ...step,
+                status: "APPROVED" as const,
+                completedAt: resubmittedAt,
+              },
+              newReviewStep,
+            ]
+          : step,
+      ),
+    );
+
+    // 修改changeRequest的状态和disgner信息
+    setChangeRequests((current) =>
+      current.map((request) =>
+        request.id === currentChangeRequestId
+          ? {
+              ...request,
+              status: "IN_REVIEW",
+              currentStepName: newReviewStep.name,
+              currentAssigneeName: newReviewStep.assigneeName,
+              updatedAt: resubmittedAt,
+            }
+          : request,
+      ),
+    );
+  }
+
+  function handleReject(reason: string) {
+    // 只有正在进行的
+    const currentStepIndex = currentWorkflowSteps.findIndex(
+      (step) => step.status === "PROCESSING",
+    );
+    if (currentStepIndex === -1) return;
+
+    // 且是当前用户能reject的step才能操作
+    const stepToReject = currentWorkflowSteps[currentStepIndex];
+    if (stepToReject.assigneeId !== currentUser.id) return;
+
+    // MVP 约束：第一个流程节点固定为 Designer Submit。
+    const designerStep = currentWorkflowSteps[0];
+    if (!designerStep?.assigneeId || !designerStep.assigneeName) return;
+
+    // 记录reject的时间
+    const rejectedAt = new Date().toISOString();
+    // 新建一个Rework的step
+    const reworkStep: WorkflowStepSummary = {
+      id: `${currentChangeRequestId}-rework-${Date.now()}`,
+      changeRequestId: currentChangeRequestId,
+      name: "Designer Rework",
+      assigneeId: designerStep.assigneeId,
+      assigneeName: designerStep.assigneeName,
+      status: "PROCESSING",
+      completedAt: null,
+      comment: null,
+    };
+
+    // 使用flatMap让原来的一个数组元素变为两个数组元素
+    setWorkflowSteps((current) =>
+      current.flatMap((step) =>
+        // 找到该reject的step再插入节点
+        step.id === stepToReject.id
+          ? [
+              {
+                ...step,
+                status: "REJECTED" as const,
+                completedAt: rejectedAt,
+                comment: reason,
+              },
+              reworkStep,
+            ]
+        // 非要reject的step就保持不变
+          : step,
+      ),
+    );
+
+    setChangeRequests((current) =>
+      current.map((request) =>
+        // 找到当前对应的changeRequest并修改到REWORK状态,同时更新step信息
+        request.id === currentChangeRequestId
+          ? {
+              ...request,
+              status: "REWORK",
+              currentStepName: reworkStep.name,
+              currentAssigneeName: reworkStep.assigneeName,
+              updatedAt: rejectedAt,
+            }
+          : request,
+      ),
+    );
+
+    setRejectedParameterSnapshots((current) => ({
+      ...current,
+      [currentChangeRequestId]: { ...savedParameters },
+    }));
   }
 
   return (
@@ -185,7 +353,12 @@ export default function ChangeRequestDetailPage() {
       <WorkflowActionPanel
         currentStep={currentStep}
         currentUser={currentUser}
+        changeRequestStatus={changeRequest.status}
+        canResubmit={canResubmit}
+        latestRejectReason={latestRejectedStep?.comment ?? null}
         onApprove={handleApprove}
+        onReject={handleReject}
+        onResubmit={handleResubmit}
       />
       <ParameterSummary parameters={savedParameters} />
       <ParameterChanges

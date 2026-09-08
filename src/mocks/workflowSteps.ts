@@ -9,6 +9,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Summer Smith",
     status: "APPROVED",
     completedAt: "2026-08-26",
+    comment: null,
   },
   {
     id: "step-cr-001-mechanical",
@@ -18,6 +19,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Rick Sanchez",
     status: "PROCESSING",
     completedAt: null,
+    comment: null,
   },
   {
     id: "step-cr-001-electrical",
@@ -27,6 +29,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Beth Smith",
     status: "PENDING",
     completedAt: null,
+    comment: null,
   },
   {
     id: "step-cr-001-qa",
@@ -36,17 +39,18 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Jerry Smith",
     status: "PENDING",
     completedAt: null,
+    comment: null,
   },
-  // 返工展示快照：设计节点正在处理，机械审核保留最近一次驳回结果。
-  // 此处不是操作历史，也不定义重新提交后的节点重置规则。
+  // 返工展示快照：保留初次提交和驳回结果，再追加正在处理的返工节点。
   {
-    id: "step-cr-002-designer",
+    id: "step-cr-002-designer-submit",
     changeRequestId: "cr-002",
-    name: "Designer Rework",
+    name: "Designer Submit",
     assigneeId: "user-summer",
     assigneeName: "Summer Smith",
-    status: "PROCESSING",
-    completedAt: null,
+    status: "APPROVED",
+    completedAt: "2026-08-27",
+    comment: null,
   },
   {
     id: "step-cr-002-mechanical",
@@ -56,6 +60,17 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Rick Sanchez",
     status: "REJECTED",
     completedAt: "2026-08-28",
+    comment: "The enclosure dimensions need to be checked and updated.",
+  },
+  {
+    id: "step-cr-002-designer-rework",
+    changeRequestId: "cr-002",
+    name: "Designer Rework",
+    assigneeId: "user-summer",
+    assigneeName: "Summer Smith",
+    status: "PROCESSING",
+    completedAt: null,
+    comment: null,
   },
   {
     id: "step-cr-002-electrical",
@@ -65,6 +80,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Beth Smith",
     status: "PENDING",
     completedAt: null,
+    comment: null,
   },
   {
     id: "step-cr-002-qa",
@@ -74,6 +90,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Jerry Smith",
     status: "PENDING",
     completedAt: null,
+    comment: null,
   },
   {
     id: "step-cr-003-designer",
@@ -83,6 +100,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Summer Smith",
     status: "APPROVED",
     completedAt: "2026-08-22",
+    comment: null,
   },
   {
     id: "step-cr-003-mechanical",
@@ -92,6 +110,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Rick Sanchez",
     status: "APPROVED",
     completedAt: "2026-08-23",
+    comment: null,
   },
   {
     id: "step-cr-003-electrical",
@@ -101,6 +120,7 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Beth Smith",
     status: "APPROVED",
     completedAt: "2026-08-24",
+    comment: null,
   },
   {
     id: "step-cr-003-qa",
@@ -110,5 +130,6 @@ export const workflowStepsData: WorkflowStepSummary[] = [
     assigneeName: "Jerry Smith",
     status: "APPROVED",
     completedAt: "2026-08-25",
+    comment: null,
   },
 ];

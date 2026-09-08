@@ -12,4 +12,5 @@ export interface WorkflowStepSummary {
   assigneeName: string | null;
   status: WorkflowStepStatus;
   completedAt: string | null;
+  comment: string | null;
 }
