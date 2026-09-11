@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router";
+import AuditTimeline from "../../components/audit/AuditTimeline";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
 import ParameterForm from "../../components/parameters/ParameterForm";
 import ParameterChanges from "../../components/parameters/ParameterChanges";
 import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowActionPanel from "../../components/workflow/WorkflowActionPanel";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
+import { auditRecordsData } from "../../mocks/auditRecords";
 import { changeRequestsData } from "../../mocks/changeRequests";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import { originalParameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
 import { workflowStepsData } from "../../mocks/workflowSteps";
+import type { AuditRecord } from "../../types/audit";
 import type { EquipmentParameters } from "../../types/parameters";
 import type { AppOutletContext } from "../../types/user";
 import type { WorkflowStepSummary } from "../../types/workflow";
@@ -52,6 +55,7 @@ export default function ChangeRequestDetailPage() {
   const { currentUser } = useOutletContext<AppOutletContext>();
   const [changeRequests, setChangeRequests] = useState(changeRequestsData);
   const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
+  const [auditRecords, setAuditRecords] = useState(auditRecordsData);
   const [parameterSnapshots, setParameterSnapshots] = useState(
     createEditableParameterSnapshots,
   );
@@ -109,6 +113,17 @@ export default function ChangeRequestDetailPage() {
   const canResubmit = rejectedParameters
     ? getParameterChanges(rejectedParameters, savedParameters).length > 0
     : false;
+  // 当前ChangeRequest对应的AuditRecord
+  const currentAuditRecords = auditRecords.filter(
+    (record) => record.changeRequestId === currentChangeRequestId,
+  );
+
+  function appendAuditRecord(record: Omit<AuditRecord, "id">) {
+    setAuditRecords((current) => [
+      { ...record, id: `audit-${crypto.randomUUID()}` },
+      ...current,
+    ]);
+  }
 
   // 传给ParameterForm组件的handleSave函数，处理参数保存逻辑
   function handleParameterSave(parameters: EquipmentParameters) {
@@ -158,13 +173,29 @@ export default function ChangeRequestDetailPage() {
           : request,
       ),
     );
+
+    // Approve后加入一条历史记录
+    appendAuditRecord({
+      changeRequestId: currentChangeRequestId,
+      stepId: stepToApprove.id,
+      stepName: stepToApprove.name,
+      actorId: currentUser.id,
+      actorName: currentUser.name,
+      action: "APPROVE",
+      createdAt: approvedAt,
+      comment: null,
+      parameterChanges: [],
+    });
   }
 
   function handleResubmit() {
     if (!changeRequest || changeRequest.status !== "REWORK") return;
     if (!rejectedParameters) return;
-    if (getParameterChanges(rejectedParameters, savedParameters).length === 0)
-      return;
+    const parameterChanges = getParameterChanges(
+      rejectedParameters,
+      savedParameters,
+    );
+    if (parameterChanges.length === 0) return;
 
     // 找到当前正在进行的step的索引
     const reworkStepIndex = currentWorkflowSteps.findIndex(
@@ -224,6 +255,19 @@ export default function ChangeRequestDetailPage() {
           : request,
       ),
     );
+
+    // Resubmit后加入一条历史记录
+    appendAuditRecord({
+      changeRequestId: currentChangeRequestId,
+      stepId: reworkStepToSubmit.id,
+      stepName: reworkStepToSubmit.name,
+      actorId: currentUser.id,
+      actorName: currentUser.name,
+      action: "RESUBMIT",
+      createdAt: resubmittedAt,
+      comment: null,
+      parameterChanges,
+    });
   }
 
   function handleReject(reason: string) {
@@ -293,6 +337,19 @@ export default function ChangeRequestDetailPage() {
       ...current,
       [currentChangeRequestId]: { ...savedParameters },
     }));
+
+    // reject后加入一条历史记录
+    appendAuditRecord({
+      changeRequestId: currentChangeRequestId,
+      stepId: stepToReject.id,
+      stepName: stepToReject.name,
+      actorId: currentUser.id,
+      actorName: currentUser.name,
+      action: "REJECT",
+      createdAt: rejectedAt,
+      comment: reason,
+      parameterChanges: [],
+    });
   }
 
   return (
@@ -371,6 +428,7 @@ export default function ChangeRequestDetailPage() {
         templates={equipmentTemplatesData}
         onSave={handleParameterSave}
       />
+      <AuditTimeline records={currentAuditRecords} />
     </section>
   );
 }
