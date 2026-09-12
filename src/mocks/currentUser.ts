@@ -5,6 +5,7 @@ export const usersData: UserSummary[] = [
   { id: "user-rick", name: "Rick Sanchez" },
   { id: "user-beth", name: "Beth Smith" },
   { id: "user-jerry", name: "Jerry Smith" },
+  { id: "user-morty", name: "Morty Smith" },
 ];
 
 export const defaultCurrentUserId = "user-rick";

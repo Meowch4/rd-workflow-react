@@ -1,4 +1,5 @@
-import { Steps } from "antd";
+import { Steps, Tag } from "antd";
+import type { ChangeRequestStatus } from "../../types/changeRequest";
 import type {
   WorkflowStepStatus,
   WorkflowStepSummary,
@@ -6,6 +7,7 @@ import type {
 
 interface WorkflowTimelineProps {
   steps: WorkflowStepSummary[];
+  changeRequestStatus: ChangeRequestStatus;
 }
 
 // Antd 的 Step 组件可应用给status属性的四种状态值
@@ -30,10 +32,16 @@ const stepStatusLabels: Record<WorkflowStepStatus, string> = {
   REJECTED: "Rejected",
 };
 
-export default function WorkflowTimeline({ steps }: WorkflowTimelineProps) {
+export default function WorkflowTimeline({
+  steps,
+  changeRequestStatus,
+}: WorkflowTimelineProps) {
   return (
     <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="font-semibold text-slate-900">Workflow</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="font-semibold text-slate-900">Workflow</h2>
+        {changeRequestStatus === "DRAFT" ? <Tag>Draft</Tag> : null}
+      </div>
 
       {steps.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">

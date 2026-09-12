@@ -107,12 +107,22 @@ export default function ChangeRequestDetailPage() {
   const savedParameters = parameterSnapshots[currentChangeRequestId];
   const rejectedParameters =
     rejectedParameterSnapshots[currentChangeRequestId];
+  // 最新的被reject的step
   const latestRejectedStep = [...currentWorkflowSteps]
     .reverse()
     .find((step) => step.status === "REJECTED");
   const canResubmit = rejectedParameters
     ? getParameterChanges(rejectedParameters, savedParameters).length > 0
     : false;
+  const savedParameterChanges = getParameterChanges(
+    originalParameters,
+    savedParameters,
+  );
+  const hasSavedParameterChanges = savedParameterChanges.length > 0;
+  const canEditParameters =
+    (changeRequest.status === "DRAFT" || changeRequest.status === "REWORK") &&
+    currentStep?.status === "PROCESSING" &&
+    currentStep.assigneeId === currentUser.id;
   // 当前ChangeRequest对应的AuditRecord
   const currentAuditRecords = auditRecords.filter(
     (record) => record.changeRequestId === currentChangeRequestId,
@@ -127,10 +137,68 @@ export default function ChangeRequestDetailPage() {
 
   // 传给ParameterForm组件的handleSave函数，处理参数保存逻辑
   function handleParameterSave(parameters: EquipmentParameters) {
+    if (!canEditParameters) return;
+
     setParameterSnapshots((current) => ({
       ...current,
       [currentChangeRequestId]: parameters,
     }));
+  }
+
+  // Draft状态下提交
+  function handleSubmit() {
+    if (!changeRequest || changeRequest.status !== "DRAFT") return;
+
+    const currentStepIndex = currentWorkflowSteps.findIndex(
+      (step) => step.status === "PROCESSING",
+    );
+    if (currentStepIndex === -1) return;
+
+    const stepToSubmit = currentWorkflowSteps[currentStepIndex];
+    if (stepToSubmit.assigneeId !== currentUser.id) return;
+
+    const nextStep = currentWorkflowSteps[currentStepIndex + 1];
+    if (!nextStep || nextStep.status !== "PENDING") return;
+
+    const submittedAt = new Date().toISOString();
+
+    setWorkflowSteps((current) =>
+      current.map((step) => {
+        if (step.id === stepToSubmit.id) {
+          return { ...step, status: "APPROVED", completedAt: submittedAt };
+        }
+        if (step.id === nextStep.id) {
+          return { ...step, status: "PROCESSING" };
+        }
+        return step;
+      }),
+    );
+
+    setChangeRequests((current) =>
+      current.map((request) =>
+        request.id === currentChangeRequestId
+          ? {
+              ...request,
+              status: "IN_REVIEW",
+              currentStepName: nextStep.name,
+              currentAssigneeName: nextStep.assigneeName,
+              updatedAt: submittedAt,
+            }
+          : request,
+      ),
+    );
+
+    appendAuditRecord({
+      changeRequestId: currentChangeRequestId,
+      stepId: stepToSubmit.id,
+      stepName: stepToSubmit.name,
+      actorId: currentUser.id,
+      actorName: currentUser.name,
+      action: "SUBMIT",
+      createdAt: submittedAt,
+      comment: null,
+      parameterChanges: savedParameterChanges,
+    });
   }
   
   // 传给Approve按钮的handleApprove函数，处理审批通过逻辑
@@ -406,13 +474,18 @@ export default function ChangeRequestDetailPage() {
         </dl>
       </div>
 
-      <WorkflowTimeline steps={currentWorkflowSteps} />
+      <WorkflowTimeline
+        steps={currentWorkflowSteps}
+        changeRequestStatus={changeRequest.status}
+      />
       <WorkflowActionPanel
         currentStep={currentStep}
         currentUser={currentUser}
         changeRequestStatus={changeRequest.status}
+        hasSavedParameterChanges={hasSavedParameterChanges}
         canResubmit={canResubmit}
         latestRejectReason={latestRejectedStep?.comment ?? null}
+        onSubmit={handleSubmit}
         onApprove={handleApprove}
         onReject={handleReject}
         onResubmit={handleResubmit}
@@ -422,12 +495,14 @@ export default function ChangeRequestDetailPage() {
         original={originalParameters}
         current={savedParameters}
       />
-      <ParameterForm
-        key={currentChangeRequestId}
-        savedParameters={savedParameters}
-        templates={equipmentTemplatesData}
-        onSave={handleParameterSave}
-      />
+      {canEditParameters ? (
+        <ParameterForm
+          key={currentChangeRequestId}
+          savedParameters={savedParameters}
+          templates={equipmentTemplatesData}
+          onSave={handleParameterSave}
+        />
+      ) : null}
       <AuditTimeline records={currentAuditRecords} />
     </section>
   );
