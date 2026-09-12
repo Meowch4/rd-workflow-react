@@ -1,12 +1,70 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import UserSwitcher from "../components/users/UserSwitcher";
+import { auditRecordsData } from "../mocks/auditRecords";
+import { changeRequestsData } from "../mocks/changeRequests";
 import { defaultCurrentUserId, usersData } from "../mocks/currentUser";
+import { originalParameterSnapshotsData } from "../mocks/parameters";
+import { workflowStepsData } from "../mocks/workflowSteps";
+import type { AppOutletContext } from "../types/app";
+import type { EquipmentParameters } from "../types/parameters";
+
+function createEditableParameterSnapshots(): Record<
+  string,
+  EquipmentParameters
+> {
+  return Object.fromEntries(
+    Object.entries(originalParameterSnapshotsData).map(([id, parameters]) => [
+      id,
+      { ...parameters },
+    ]),
+  );
+}
+
+function createRejectedParameterSnapshots(): Record<
+  string,
+  EquipmentParameters
+> {
+  return changeRequestsData.reduce<Record<string, EquipmentParameters>>(
+    (snapshots, request) => {
+      const parameters = originalParameterSnapshotsData[request.id];
+
+      if (request.status === "REWORK" && parameters) {
+        snapshots[request.id] = { ...parameters };
+      }
+
+      return snapshots;
+    },
+    {},
+  );
+}
 
 export default function AppLayout() {
     const [currentUserId, setCurrentUserId] = useState(defaultCurrentUserId);
+    const [changeRequests, setChangeRequests] = useState(changeRequestsData);
+    const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
+    const [auditRecords, setAuditRecords] = useState(auditRecordsData);
+    const [parameterSnapshots, setParameterSnapshots] = useState(
+      createEditableParameterSnapshots,
+    );
+    const [rejectedParameterSnapshots, setRejectedParameterSnapshots] =
+      useState(createRejectedParameterSnapshots);
     const currentUser =
       usersData.find((user) => user.id === currentUserId) ?? usersData[0];
+
+    const outletContext: AppOutletContext = {
+      currentUser,
+      changeRequests,
+      setChangeRequests,
+      workflowSteps,
+      setWorkflowSteps,
+      auditRecords,
+      setAuditRecords,
+      parameterSnapshots,
+      setParameterSnapshots,
+      rejectedParameterSnapshots,
+      setRejectedParameterSnapshots,
+    };
 
     const getNavLinkClassName = ({ isActive }: { isActive: boolean }) => {
         const baseClassName = 'rounded-md px-3 py-2 text-sm font-medium transition-colors';
@@ -60,7 +118,7 @@ export default function AppLayout() {
         </header>
 
         <main className="flex-1 p-6">
-            <Outlet context={{ currentUser }} />
+            <Outlet context={outletContext} />
         </main>
       </div>
     </div>

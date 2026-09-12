@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router";
 import AuditTimeline from "../../components/audit/AuditTimeline";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
@@ -7,61 +6,32 @@ import ParameterChanges from "../../components/parameters/ParameterChanges";
 import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowActionPanel from "../../components/workflow/WorkflowActionPanel";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
-import { auditRecordsData } from "../../mocks/auditRecords";
-import { changeRequestsData } from "../../mocks/changeRequests";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import { originalParameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
-import { workflowStepsData } from "../../mocks/workflowSteps";
+import type { AppOutletContext } from "../../types/app";
 import type { AuditRecord } from "../../types/audit";
 import type { EquipmentParameters } from "../../types/parameters";
-import type { AppOutletContext } from "../../types/user";
 import type { WorkflowStepSummary } from "../../types/workflow";
 import { getParameterChanges } from "../../utils/parameterChanges";
-
-// 用mock data创建一个可编辑的parameterSnapshots对象，避免直接修改原始数据
-function createEditableParameterSnapshots(): Record<string, EquipmentParameters> {
-  return Object.fromEntries(
-    Object.entries(originalParameterSnapshotsData).map(([id, parameters]) => [
-      id,
-      { ...parameters },
-    ]),
-  );
-}
-
-// 为已经处于返工状态的 mock 数据保留“被驳回时”的参数。
-function createRejectedParameterSnapshots(): Record<
-  string,
-  EquipmentParameters
-> {
-  return changeRequestsData.reduce<Record<string, EquipmentParameters>>(
-    (snapshots, request) => {
-      const parameters = originalParameterSnapshotsData[request.id];
-
-      if (request.status === "REWORK" && parameters) {
-        snapshots[request.id] = { ...parameters };
-      }
-
-      return snapshots;
-    },
-    {},
-  );
-}
 
 export default function ChangeRequestDetailPage() {
   // 从url读取projectId和changeRequestId
   const { projectId, changeRequestId } = useParams();
   // 从OutletContext中获取当前用户信息
-  const { currentUser } = useOutletContext<AppOutletContext>();
-  const [changeRequests, setChangeRequests] = useState(changeRequestsData);
-  const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
-  const [auditRecords, setAuditRecords] = useState(auditRecordsData);
-  const [parameterSnapshots, setParameterSnapshots] = useState(
-    createEditableParameterSnapshots,
-  );
-  const [rejectedParameterSnapshots, setRejectedParameterSnapshots] = useState(
-    createRejectedParameterSnapshots,
-  );
+  const {
+    currentUser,
+    changeRequests,
+    setChangeRequests,
+    workflowSteps,
+    setWorkflowSteps,
+    auditRecords,
+    setAuditRecords,
+    parameterSnapshots,
+    setParameterSnapshots,
+    rejectedParameterSnapshots,
+    setRejectedParameterSnapshots,
+  } = useOutletContext<AppOutletContext>();
 
   const project = projectsData.find((item) => item.id === projectId);
   const changeRequest = changeRequests.find(

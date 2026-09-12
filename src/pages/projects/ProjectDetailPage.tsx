@@ -1,11 +1,12 @@
-import { Link, useParams } from "react-router";
+import { Link, useOutletContext, useParams } from "react-router";
 import { projectsData } from "../../mocks/projects";
 import ProjectStatusBadge from "../../components/projects/ProjectStatusBadge";
-import { changeRequestsData } from "../../mocks/changeRequests";
 import ChangeRequestTable from "../../components/changeRequests/ChangeRequestTable";
+import type { AppOutletContext } from "../../types/app";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
+  const { changeRequests } = useOutletContext<AppOutletContext>();
 
   const project = projectsData.find((project) => project.id === projectId);
   
@@ -28,7 +29,9 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const changeRequests = changeRequestsData.filter((changeRequest) => changeRequest.projectId === project.id)
+  const projectChangeRequests = changeRequests.filter(
+    (changeRequest) => changeRequest.projectId === project.id,
+  );
 
   return (
     <section>
@@ -79,7 +82,7 @@ export default function ProjectDetailPage() {
         </dl>
       </div>
 
-      <ChangeRequestTable changeRequests={changeRequests} />
+      <ChangeRequestTable changeRequests={projectChangeRequests} />
     </section>
   );
 }
