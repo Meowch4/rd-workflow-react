@@ -44,6 +44,8 @@ export default function AppLayout() {
     const [changeRequests, setChangeRequests] = useState(changeRequestsData);
     const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
     const [auditRecords, setAuditRecords] = useState(auditRecordsData);
+    const [originalParameterSnapshots, setOriginalParameterSnapshots] =
+      useState(createEditableParameterSnapshots);
     const [parameterSnapshots, setParameterSnapshots] = useState(
       createEditableParameterSnapshots,
     );
@@ -60,6 +62,8 @@ export default function AppLayout() {
       setWorkflowSteps,
       auditRecords,
       setAuditRecords,
+      originalParameterSnapshots,
+      setOriginalParameterSnapshots,
       parameterSnapshots,
       setParameterSnapshots,
       rejectedParameterSnapshots,

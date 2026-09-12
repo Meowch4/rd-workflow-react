@@ -6,7 +6,7 @@ import type { AppOutletContext } from "../../types/app";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
-  const { changeRequests } = useOutletContext<AppOutletContext>();
+  const { currentUser, changeRequests } = useOutletContext<AppOutletContext>();
 
   const project = projectsData.find((project) => project.id === projectId);
   
@@ -52,7 +52,17 @@ export default function ProjectDetailPage() {
           </h1>
         </div>
 
-        <ProjectStatusBadge status={project.status} />
+        <div className="flex items-center gap-3">
+          {currentUser.role === "PROJECT_MANAGER" ? (
+            <Link
+              to={`/projects/${project.id}/change-requests/new`}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Create Change Request
+            </Link>
+          ) : null}
+          <ProjectStatusBadge status={project.status} />
+        </div>
       </header>
 
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -69,7 +79,7 @@ export default function ProjectDetailPage() {
           <div>
             <dt className="text-sm text-slate-500">Change Requests</dt>
             <dd className="mt-1 font-medium text-slate-900">
-              {project.changeRequestCount}
+              {projectChangeRequests.length}
             </dd>
           </div>
 

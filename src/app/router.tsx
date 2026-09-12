@@ -7,6 +7,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import NotFoundPage from "../pages/errors/NotFoundPage";
 import ProjectDetailPage from "../pages/projects/ProjectDetailPage";
 import ChangeRequestDetailPage from "../pages/changeRequests/ChangeRequestDetailPage";
+import CreateChangeRequestPage from "../pages/changeRequests/CreateChangeRequestPage";
 
 export default function AppRouter() {
     return (
@@ -18,6 +19,10 @@ export default function AppRouter() {
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="projects" element={<ProjectsPage />} />
                 <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                <Route
+                    path="projects/:projectId/change-requests/new"
+                    element={<CreateChangeRequestPage />}
+                />
                 <Route
                     path="projects/:projectId/change-requests/:changeRequestId"
                     element={<ChangeRequestDetailPage />}

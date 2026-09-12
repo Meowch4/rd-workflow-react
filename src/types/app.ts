@@ -13,6 +13,10 @@ export interface AppOutletContext {
   setWorkflowSteps: Dispatch<SetStateAction<WorkflowStepSummary[]>>;
   auditRecords: AuditRecord[];
   setAuditRecords: Dispatch<SetStateAction<AuditRecord[]>>;
+  originalParameterSnapshots: Record<string, EquipmentParameters>;
+  setOriginalParameterSnapshots: Dispatch<
+    SetStateAction<Record<string, EquipmentParameters>>
+  >;
   parameterSnapshots: Record<string, EquipmentParameters>;
   setParameterSnapshots: Dispatch<
     SetStateAction<Record<string, EquipmentParameters>>

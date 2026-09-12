@@ -7,7 +7,6 @@ import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowActionPanel from "../../components/workflow/WorkflowActionPanel";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
-import { originalParameterSnapshotsData } from "../../mocks/parameters";
 import { projectsData } from "../../mocks/projects";
 import type { AppOutletContext } from "../../types/app";
 import type { AuditRecord } from "../../types/audit";
@@ -27,6 +26,7 @@ export default function ChangeRequestDetailPage() {
     setWorkflowSteps,
     auditRecords,
     setAuditRecords,
+    originalParameterSnapshots,
     parameterSnapshots,
     setParameterSnapshots,
     rejectedParameterSnapshots,
@@ -73,7 +73,7 @@ export default function ChangeRequestDetailPage() {
   );
   const currentChangeRequestId = changeRequest.id;
   const originalParameters =
-    originalParameterSnapshotsData[currentChangeRequestId];
+    originalParameterSnapshots[currentChangeRequestId];
   const savedParameters = parameterSnapshots[currentChangeRequestId];
   const rejectedParameters =
     rejectedParameterSnapshots[currentChangeRequestId];

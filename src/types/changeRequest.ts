@@ -4,7 +4,12 @@ export type ChangeRequestStatus =
   | "REWORK"
   | "COMPLETED";
 
-export type ChangeRequestAction = "SUBMIT" | "REJECT" | "RESUBMIT" | "APPROVE";
+export type ChangeRequestAction =
+  | "CREATE"
+  | "SUBMIT"
+  | "REJECT"
+  | "RESUBMIT"
+  | "APPROVE";
 
 export interface ChangeRequestSummary {
   id: string;

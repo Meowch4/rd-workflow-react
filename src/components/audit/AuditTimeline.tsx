@@ -8,6 +8,7 @@ interface AuditTimelineProps {
 
 // Action状态对应的ui上的文字
 const actionLabels: Record<ChangeRequestAction, string> = {
+  CREATE: "Created",
   SUBMIT: "Submitted",
   APPROVE: "Approved",
   REJECT: "Rejected",
@@ -15,6 +16,7 @@ const actionLabels: Record<ChangeRequestAction, string> = {
 };
 
 const actionColors: Record<ChangeRequestAction, string> = {
+  CREATE: "purple",
   SUBMIT: "blue",
   APPROVE: "green",
   REJECT: "red",
