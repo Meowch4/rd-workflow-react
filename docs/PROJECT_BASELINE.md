@@ -223,5 +223,6 @@ Implementation is also an experiment for discovering unknown requirements, incor
 - Move quickly through simple and repeated work. Slow down for important React, TypeScript, web, and engineering concepts when they first appear.
 - Do not repeatedly teach concepts that the learner has already demonstrated.
 - After each implementation, identify and explain its main new learning points or difficulties. For familiar patterns, reference the earlier feature with the same pattern instead of repeating the explanation.
+- After each code-generation unit, give a recommended reading order for the changed files and briefly state what to understand in each file. Order the files by the natural control flow or dependency direction, and group low-value mechanical files so the learner does not have to review every file with equal attention.
 - Keep each step focused on one or two questions with current value.
 - React frontend engineering and the RD Workflow frontend showcase remain the first priority. Architecture, full-stack design, and AI-coding discussion must support that goal rather than replacing it.
