@@ -5,6 +5,7 @@ import { auditRecordsData } from "../mocks/auditRecords";
 import { changeRequestsData } from "../mocks/changeRequests";
 import { defaultCurrentUserId, usersData } from "../mocks/currentUser";
 import { originalParameterSnapshotsData } from "../mocks/parameters";
+import { projectsData } from "../mocks/projects";
 import { workflowStepsData } from "../mocks/workflowSteps";
 import type { AppOutletContext } from "../types/app";
 import type { EquipmentParameters } from "../types/parameters";
@@ -41,6 +42,7 @@ function createRejectedParameterSnapshots(): Record<
 
 export default function AppLayout() {
     const [currentUserId, setCurrentUserId] = useState(defaultCurrentUserId);
+    const [projects, setProjects] = useState(projectsData);
     const [changeRequests, setChangeRequests] = useState(changeRequestsData);
     const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
     const [auditRecords, setAuditRecords] = useState(auditRecordsData);
@@ -56,6 +58,8 @@ export default function AppLayout() {
 
     const outletContext: AppOutletContext = {
       currentUser,
+      projects,
+      setProjects,
       changeRequests,
       setChangeRequests,
       workflowSteps,

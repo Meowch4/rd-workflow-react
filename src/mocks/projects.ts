@@ -6,7 +6,7 @@ export const projectsData: ProjectSummary[] = [
         projectNumber: "RD-2026-001",
         name: "Alpha",
         ownerName: "Summer",
-        status: "DRAFT",
+        status: "ACTIVE",
         changeRequestCount: 3,
         createdAt: '2026-08-20',
     },

@@ -1,14 +1,14 @@
 import { Link, useOutletContext, useParams } from "react-router";
-import { projectsData } from "../../mocks/projects";
 import ProjectStatusBadge from "../../components/projects/ProjectStatusBadge";
 import ChangeRequestTable from "../../components/changeRequests/ChangeRequestTable";
 import type { AppOutletContext } from "../../types/app";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
-  const { currentUser, changeRequests } = useOutletContext<AppOutletContext>();
+  const { currentUser, projects, changeRequests } =
+    useOutletContext<AppOutletContext>();
 
-  const project = projectsData.find((project) => project.id === projectId);
+  const project = projects.find((project) => project.id === projectId);
   
   if (!project) {
     return (

@@ -2,7 +2,6 @@ import { useState, type SubmitEvent } from "react";
 import { Link, useNavigate, useOutletContext, useParams } from "react-router";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import { usersData } from "../../mocks/currentUser";
-import { projectsData } from "../../mocks/projects";
 import type { AppOutletContext } from "../../types/app";
 import type { ChangeRequestSummary } from "../../types/changeRequest";
 import type { WorkflowStepSummary } from "../../types/workflow";
@@ -54,6 +53,7 @@ export default function CreateChangeRequestPage() {
   const navigate = useNavigate();
   const {
     currentUser,
+    projects,
     changeRequests,
     setChangeRequests,
     setWorkflowSteps,
@@ -64,7 +64,7 @@ export default function CreateChangeRequestPage() {
   const [draft, setDraft] = useState(emptyDraft);
   const [errors, setErrors] = useState<CreateChangeRequestErrors>({});
 
-  const project = projectsData.find((item) => item.id === projectId);
+  const project = projects.find((item) => item.id === projectId);
   // 筛选出每个role下面的用户列表呈现在下拉框里
   const designers = usersData.filter((user) => user.role === "DESIGNER");
   const mechanicalEngineers = usersData.filter(

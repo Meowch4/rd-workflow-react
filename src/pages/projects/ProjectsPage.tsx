@@ -1,20 +1,20 @@
 import { useState } from "react";
-import { useOutletContext } from "react-router";
+import { Link, useOutletContext } from "react-router";
 import ProjectTable from "../../components/projects/ProjectTable";
-import { projectsData } from "../../mocks/projects";
 import ProjectFilters, { type ProjectStatusFilter } from "../../components/projects/ProjectFilters";
 import type { AppOutletContext } from "../../types/app";
 
 
 export default function ProjectsPage() {
-  const { changeRequests } = useOutletContext<AppOutletContext>();
+  const { currentUser, projects, changeRequests } =
+    useOutletContext<AppOutletContext>();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatusFilter>("ALL");
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
 
-  const projectsWithCurrentCounts = projectsData.map((project) => ({
+  const projectsWithCurrentCounts = projects.map((project) => ({
     ...project,
     changeRequestCount: changeRequests.filter(
       (changeRequest) => changeRequest.projectId === project.id,
@@ -32,8 +32,21 @@ export default function ProjectsPage() {
 
   return (
     <section>
-      <h1>Projects</h1>
-      <p>查看和管理研发项目。</p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Projects</h1>
+          <p className="mt-2 text-sm text-slate-500">查看和管理研发项目。</p>
+        </div>
+        {/* 如果当前用户有权限，显示创建项目按钮 */}
+        {currentUser.role === "PROJECT_MANAGER" ? (
+          <Link
+            to="/projects/new"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Create Project
+          </Link>
+        ) : null}
+      </header>
       <ProjectFilters
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm}

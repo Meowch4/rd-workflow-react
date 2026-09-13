@@ -7,7 +7,6 @@ import ParameterSummary from "../../components/parameters/ParameterSummary";
 import WorkflowActionPanel from "../../components/workflow/WorkflowActionPanel";
 import WorkflowTimeline from "../../components/workflow/WorkflowTimeline";
 import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
-import { projectsData } from "../../mocks/projects";
 import type { AppOutletContext } from "../../types/app";
 import type { AuditRecord } from "../../types/audit";
 import type { EquipmentParameters } from "../../types/parameters";
@@ -20,6 +19,8 @@ export default function ChangeRequestDetailPage() {
   // 从OutletContext中获取当前用户信息
   const {
     currentUser,
+    projects,
+    setProjects,
     changeRequests,
     setChangeRequests,
     workflowSteps,
@@ -33,7 +34,7 @@ export default function ChangeRequestDetailPage() {
     setRejectedParameterSnapshots,
   } = useOutletContext<AppOutletContext>();
 
-  const project = projectsData.find((item) => item.id === projectId);
+  const project = projects.find((item) => item.id === projectId);
   const changeRequest = changeRequests.find(
     (item) =>
       item.id === changeRequestId && item.projectId === projectId,
@@ -155,6 +156,15 @@ export default function ChangeRequestDetailPage() {
               updatedAt: submittedAt,
             }
           : request,
+      ),
+    );
+
+    // 如果当前Project的状态是DRAFT，提交后需要把对应的Project状态改为ACTIVE
+    setProjects((current) =>
+      current.map((item) =>
+        item.id === changeRequest.projectId && item.status === "DRAFT"
+          ? { ...item, status: "ACTIVE" }
+          : item,
       ),
     );
 

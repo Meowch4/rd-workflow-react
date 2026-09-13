@@ -2,11 +2,14 @@ import type { Dispatch, SetStateAction } from "react";
 import type { AuditRecord } from "./audit";
 import type { ChangeRequestSummary } from "./changeRequest";
 import type { EquipmentParameters } from "./parameters";
+import type { ProjectSummary } from "./projects";
 import type { UserSummary } from "./user";
 import type { WorkflowStepSummary } from "./workflow";
 
 export interface AppOutletContext {
   currentUser: UserSummary;
+  projects: ProjectSummary[];
+  setProjects: Dispatch<SetStateAction<ProjectSummary[]>>;
   changeRequests: ChangeRequestSummary[];
   setChangeRequests: Dispatch<SetStateAction<ChangeRequestSummary[]>>;
   workflowSteps: WorkflowStepSummary[];
