@@ -8,5 +8,3 @@ export const usersData: UserSummary[] = [
   { id: "user-jerry", name: "Jerry Smith", role: "QA" },
   { id: "user-morty", name: "Morty Smith", role: "DESIGNER" },
 ];
-
-export const defaultCurrentUserId = "user-rick";

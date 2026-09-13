@@ -1,9 +1,13 @@
 import AppRouter from './app/router'
+import AuthProvider from './auth/AuthProvider'
 
 function App() {
 
   return (
-    <AppRouter />
+    // AuthProvider包在最外面，一直不会卸载
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   )
 }
 

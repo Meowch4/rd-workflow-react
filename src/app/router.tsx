@@ -9,28 +9,32 @@ import ProjectDetailPage from "../pages/projects/ProjectDetailPage";
 import ChangeRequestDetailPage from "../pages/changeRequests/ChangeRequestDetailPage";
 import CreateChangeRequestPage from "../pages/changeRequests/CreateChangeRequestPage";
 import CreateProjectPage from "../pages/projects/CreateProjectPage";
+import ProtectedRoute from "../auth/ProtectedRoute";
 
 export default function AppRouter() {
     return (
         <Routes>
             <Route path="/login" element={<LoginPage />} />
-            
-            <Route path="/" element={<AppLayout />}>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="projects" element={<ProjectsPage />} />
-                <Route path="projects/new" element={<CreateProjectPage />} />
-                <Route path="projects/:projectId" element={<ProjectDetailPage />} />
-                <Route
-                    path="projects/:projectId/change-requests/new"
-                    element={<CreateChangeRequestPage />}
-                />
-                <Route
-                    path="projects/:projectId/change-requests/:changeRequestId"
-                    element={<ChangeRequestDetailPage />}
-                />
-                <Route path="tasks" element={<MyTasksPage />} />
-                <Route path="*" element={<NotFoundPage />} />
+
+            {/* ProtectedRoute的目的是检查用户是否登录，未登录就跳转到Login页面 */}
+            <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<AppLayout />}>
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="projects" element={<ProjectsPage />} />
+                    <Route path="projects/new" element={<CreateProjectPage />} />
+                    <Route path="projects/:projectId" element={<ProjectDetailPage />} />
+                    <Route
+                        path="projects/:projectId/change-requests/new"
+                        element={<CreateChangeRequestPage />}
+                    />
+                    <Route
+                        path="projects/:projectId/change-requests/:changeRequestId"
+                        element={<ChangeRequestDetailPage />}
+                    />
+                    <Route path="tasks" element={<MyTasksPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                </Route>
             </Route>
 
         </Routes>

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router";
+import useAuth from "../auth/useAuth";
 import UserSwitcher from "../components/users/UserSwitcher";
 import { auditRecordsData } from "../mocks/auditRecords";
 import { changeRequestsData } from "../mocks/changeRequests";
-import { defaultCurrentUserId, usersData } from "../mocks/currentUser";
+import { usersData } from "../mocks/currentUser";
 import { originalParameterSnapshotsData } from "../mocks/parameters";
 import { projectsData } from "../mocks/projects";
 import { workflowStepsData } from "../mocks/workflowSteps";
@@ -41,7 +42,7 @@ function createRejectedParameterSnapshots(): Record<
 }
 
 export default function AppLayout() {
-    const [currentUserId, setCurrentUserId] = useState(defaultCurrentUserId);
+    const { currentUser, switchUser, signOut } = useAuth();
     const [projects, setProjects] = useState(projectsData);
     const [changeRequests, setChangeRequests] = useState(changeRequestsData);
     const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
@@ -53,8 +54,8 @@ export default function AppLayout() {
     );
     const [rejectedParameterSnapshots, setRejectedParameterSnapshots] =
       useState(createRejectedParameterSnapshots);
-    const currentUser =
-      usersData.find((user) => user.id === currentUserId) ?? usersData[0];
+    // 如果没有当前用户，直接返回 null，不渲染任何内容 
+    if (!currentUser) return null;
 
     const outletContext: AppOutletContext = {
       currentUser,
@@ -118,11 +119,20 @@ export default function AppLayout() {
           <span className="text-sm font-medium text-slate-700">
             研发项目管理平台
           </span>
-          <UserSwitcher
-            users={usersData}
-            currentUserId={currentUserId}
-            onUserChange={setCurrentUserId}
-          />
+          <div className="flex items-center gap-3">
+            <UserSwitcher
+              users={usersData}
+              currentUserId={currentUser.id}
+              onUserChange={switchUser}
+            />
+            <button
+              type="button"
+              onClick={signOut}
+              className="text-sm font-medium text-slate-500 hover:text-slate-900"
+            >
+              Sign out
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 p-6">
