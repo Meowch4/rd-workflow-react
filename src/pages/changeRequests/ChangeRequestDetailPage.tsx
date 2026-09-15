@@ -1,4 +1,5 @@
 import { Link, useOutletContext, useParams } from "react-router";
+import { message } from "antd";
 import AuditTimeline from "../../components/audit/AuditTimeline";
 import ChangeRequestStatusBadge from "../../components/changeRequests/ChangeRequestStatusBadge";
 import ParameterForm from "../../components/parameters/ParameterForm";
@@ -12,6 +13,18 @@ import type { AuditRecord } from "../../types/audit";
 import type { EquipmentParameters } from "../../types/parameters";
 import type { WorkflowStepSummary } from "../../types/workflow";
 import { getParameterChanges } from "../../utils/parameterChanges";
+import {
+  approveWorkflowStep,
+  type ApproveWorkflowFailureReason,
+} from "../../domain/workflow/approveWorkflowStep";
+
+// 把Approve失败消息数据转成显示用的字符串
+const approveFailureMessages: Record<ApproveWorkflowFailureReason, string> = {
+  CHANGE_REQUEST_NOT_IN_REVIEW: "This change request is not in review.",
+  NO_PROCESSING_STEP: "No workflow step is currently available for approval.",
+  NOT_ASSIGNEE: "You are not assigned to the current workflow step.",
+  NEXT_STEP_NOT_PENDING: "The next workflow step is not ready to begin.",
+};
 
 export default function ChangeRequestDetailPage() {
   // 从url读取projectId和changeRequestId
@@ -183,57 +196,37 @@ export default function ChangeRequestDetailPage() {
   
   // 传给Approve按钮的handleApprove函数，处理审批通过逻辑
   function handleApprove() {
-    const currentStepIndex = currentWorkflowSteps.findIndex(
-      (step) => step.status === "PROCESSING",
-    );
-    if (currentStepIndex === -1) return;
-
-    const stepToApprove = currentWorkflowSteps[currentStepIndex];
-    if (stepToApprove.assigneeId !== currentUser.id) return;
-
-    const nextStep = currentWorkflowSteps[currentStepIndex + 1];
-    if (nextStep && nextStep.status !== "PENDING") return;
+    // 虽然页面前面已经判断过 !changeRequest，
+    // 但 handleApprove 是稍后才可能执行的嵌套函数，
+    // TypeScript 没有继续信任外层缩窄，所以 handler 内再次添加
+    if (!changeRequest) return;
 
     const approvedAt = new Date().toISOString();
+    
+    // 调用整合好的approveWorkflowStep函数
+    const result = approveWorkflowStep({
+      changeRequest,
+      workflowSteps,
+      actor: currentUser,
+      approvedAt,
+    });
 
-    setWorkflowSteps((current) =>
-      current.map((step) => {
-        if (step.id === stepToApprove.id) {
-          return { ...step, status: "APPROVED", completedAt: approvedAt };
-        }
-        if (step.id === nextStep?.id) {
-          return { ...step, status: "PROCESSING" };
-        }
-        return step;
-      }),
-    );
+    if (!result.success) {
+      message.warning(approveFailureMessages[result.reason]);
+      return;
+    }
 
+    setWorkflowSteps(result.workflowSteps);
     setChangeRequests((current) =>
       current.map((request) =>
         request.id === currentChangeRequestId
-          ? {
-              ...request,
-              status: nextStep ? "IN_REVIEW" : "COMPLETED",
-              currentStepName: nextStep?.name ?? "Completed",
-              currentAssigneeName: nextStep?.assigneeName ?? null,
-              updatedAt: approvedAt,
-            }
+          ? result.changeRequest
           : request,
       ),
     );
 
     // Approve后加入一条历史记录
-    appendAuditRecord({
-      changeRequestId: currentChangeRequestId,
-      stepId: stepToApprove.id,
-      stepName: stepToApprove.name,
-      actorId: currentUser.id,
-      actorName: currentUser.name,
-      action: "APPROVE",
-      createdAt: approvedAt,
-      comment: null,
-      parameterChanges: [],
-    });
+    appendAuditRecord(result.auditRecord);
   }
 
   function handleResubmit() {
