@@ -21,6 +21,10 @@ import {
   submitWorkflowStep,
   type SubmitWorkflowFailureReason,
 } from "../../domain/workflow/submitWorkflowStep";
+import {
+  rejectWorkflowStep,
+  type RejectWorkflowFailureReason,
+} from "../../domain/workflow/rejectWorkflowStep";
 
 // 把Approve失败消息数据转成显示用的字符串
 const approveFailureMessages: Record<ApproveWorkflowFailureReason, string> = {
@@ -35,6 +39,13 @@ const submitFailureMessages: Record<SubmitWorkflowFailureReason, string> = {
   NO_PROCESSING_STEP: "No workflow step is currently available for submission.",
   NOT_ASSIGNEE: "You are not assigned to the current workflow step.",
   NEXT_STEP_NOT_PENDING: "The next workflow step is not ready to begin.",
+};
+
+const rejectFailureMessages: Record<RejectWorkflowFailureReason, string> = {
+  CHANGE_REQUEST_NOT_IN_REVIEW: "This change request is not in review.",
+  NO_PROCESSING_STEP: "No workflow step is currently available for rejection.",
+  NOT_ASSIGNEE: "You are not assigned to the current workflow step.",
+  REASON_REQUIRED: "A reject reason is required.",
 };
 
 export default function ChangeRequestDetailPage() {
@@ -296,85 +307,40 @@ export default function ChangeRequestDetailPage() {
   }
 
   function handleReject(reason: string) {
-    // 只有正在进行的
-    const currentStepIndex = currentWorkflowSteps.findIndex(
-      (step) => step.status === "PROCESSING",
-    );
-    if (currentStepIndex === -1) return;
+    if (!changeRequest) return;
 
-    // 且是当前用户能reject的step才能操作
-    const stepToReject = currentWorkflowSteps[currentStepIndex];
-    if (stepToReject.assigneeId !== currentUser.id) return;
-
-    // MVP 约束：第一个流程节点固定为 Designer Submit。
-    const designerStep = currentWorkflowSteps[0];
-    if (!designerStep?.assigneeId || !designerStep.assigneeName) return;
-
-    // 记录reject的时间
     const rejectedAt = new Date().toISOString();
-    // 新建一个Rework的step
-    const reworkStep: WorkflowStepSummary = {
-      id: `${currentChangeRequestId}-rework-${Date.now()}`,
-      changeRequestId: currentChangeRequestId,
-      name: "Designer Rework",
-      assigneeId: designerStep.assigneeId,
-      assigneeName: designerStep.assigneeName,
-      status: "PROCESSING",
-      completedAt: null,
-      comment: null,
-    };
+    const result = rejectWorkflowStep({
+      changeRequest,
+      workflowSteps,
+      actor: currentUser,
+      reason,
+      savedParameters,
+      rejectedAt,
+      reworkStepId: `${currentChangeRequestId}-rework-${Date.now()}`,
+    });
 
-    // 使用flatMap让原来的一个数组元素变为两个数组元素
-    setWorkflowSteps((current) =>
-      current.flatMap((step) =>
-        // 找到该reject的step再插入节点
-        step.id === stepToReject.id
-          ? [
-              {
-                ...step,
-                status: "REJECTED" as const,
-                completedAt: rejectedAt,
-                comment: reason,
-              },
-              reworkStep,
-            ]
-        // 非要reject的step就保持不变
-          : step,
-      ),
-    );
+    if (!result.success) {
+      void message.warning(rejectFailureMessages[result.reason]);
+      return;
+    }
+
+    setWorkflowSteps(result.workflowSteps);
 
     setChangeRequests((current) =>
       current.map((request) =>
-        // 找到当前对应的changeRequest并修改到REWORK状态,同时更新step信息
         request.id === currentChangeRequestId
-          ? {
-              ...request,
-              status: "REWORK",
-              currentStepName: reworkStep.name,
-              currentAssigneeName: reworkStep.assigneeName,
-              updatedAt: rejectedAt,
-            }
+          ? result.changeRequest
           : request,
       ),
     );
 
     setRejectedParameterSnapshots((current) => ({
       ...current,
-      [currentChangeRequestId]: { ...savedParameters },
+      [currentChangeRequestId]: result.rejectedParameterSnapshot,
     }));
 
-    // reject后加入一条历史记录
-    appendAuditRecord({
-      changeRequestId: currentChangeRequestId,
-      stepId: stepToReject.id,
-      stepName: stepToReject.name,
-      actorId: currentUser.id,
-      actorName: currentUser.name,
-      action: "REJECT",
-      createdAt: rejectedAt,
-      comment: reason,
-      parameterChanges: [],
-    });
+    appendAuditRecord(result.auditRecord);
   }
 
   return (
