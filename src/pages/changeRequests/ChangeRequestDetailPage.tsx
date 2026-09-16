@@ -17,11 +17,22 @@ import {
   approveWorkflowStep,
   type ApproveWorkflowFailureReason,
 } from "../../domain/workflow/approveWorkflowStep";
+import {
+  submitWorkflowStep,
+  type SubmitWorkflowFailureReason,
+} from "../../domain/workflow/submitWorkflowStep";
 
 // 把Approve失败消息数据转成显示用的字符串
 const approveFailureMessages: Record<ApproveWorkflowFailureReason, string> = {
   CHANGE_REQUEST_NOT_IN_REVIEW: "This change request is not in review.",
   NO_PROCESSING_STEP: "No workflow step is currently available for approval.",
+  NOT_ASSIGNEE: "You are not assigned to the current workflow step.",
+  NEXT_STEP_NOT_PENDING: "The next workflow step is not ready to begin.",
+};
+
+const submitFailureMessages: Record<SubmitWorkflowFailureReason, string> = {
+  CHANGE_REQUEST_NOT_DRAFT: "This change request is no longer a draft.",
+  NO_PROCESSING_STEP: "No workflow step is currently available for submission.",
   NOT_ASSIGNEE: "You are not assigned to the current workflow step.",
   NEXT_STEP_NOT_PENDING: "The next workflow step is not ready to begin.",
 };
@@ -131,67 +142,40 @@ export default function ChangeRequestDetailPage() {
 
   // Draft状态下提交
   function handleSubmit() {
-    if (!changeRequest || changeRequest.status !== "DRAFT") return;
-
-    const currentStepIndex = currentWorkflowSteps.findIndex(
-      (step) => step.status === "PROCESSING",
-    );
-    if (currentStepIndex === -1) return;
-
-    const stepToSubmit = currentWorkflowSteps[currentStepIndex];
-    if (stepToSubmit.assigneeId !== currentUser.id) return;
-
-    const nextStep = currentWorkflowSteps[currentStepIndex + 1];
-    if (!nextStep || nextStep.status !== "PENDING") return;
+    if (!changeRequest || !project) return;
 
     const submittedAt = new Date().toISOString();
+    const result = submitWorkflowStep({
+      changeRequest,
+      project,
+      workflowSteps,
+      actor: currentUser,
+      submittedAt,
+      parameterChanges: savedParameterChanges,
+    });
 
-    setWorkflowSteps((current) =>
-      current.map((step) => {
-        if (step.id === stepToSubmit.id) {
-          return { ...step, status: "APPROVED", completedAt: submittedAt };
-        }
-        if (step.id === nextStep.id) {
-          return { ...step, status: "PROCESSING" };
-        }
-        return step;
-      }),
-    );
+    if (!result.success) {
+      void message.warning(submitFailureMessages[result.reason]);
+      return;
+    }
+
+    setWorkflowSteps(result.workflowSteps);
 
     setChangeRequests((current) =>
       current.map((request) =>
         request.id === currentChangeRequestId
-          ? {
-              ...request,
-              status: "IN_REVIEW",
-              currentStepName: nextStep.name,
-              currentAssigneeName: nextStep.assigneeName,
-              updatedAt: submittedAt,
-            }
+          ? result.changeRequest
           : request,
       ),
     );
 
-    // 如果当前Project的状态是DRAFT，提交后需要把对应的Project状态改为ACTIVE
     setProjects((current) =>
       current.map((item) =>
-        item.id === changeRequest.projectId && item.status === "DRAFT"
-          ? { ...item, status: "ACTIVE" }
-          : item,
+        item.id === result.project.id ? result.project : item,
       ),
     );
 
-    appendAuditRecord({
-      changeRequestId: currentChangeRequestId,
-      stepId: stepToSubmit.id,
-      stepName: stepToSubmit.name,
-      actorId: currentUser.id,
-      actorName: currentUser.name,
-      action: "SUBMIT",
-      createdAt: submittedAt,
-      comment: null,
-      parameterChanges: savedParameterChanges,
-    });
+    appendAuditRecord(result.auditRecord);
   }
   
   // 传给Approve按钮的handleApprove函数，处理审批通过逻辑
