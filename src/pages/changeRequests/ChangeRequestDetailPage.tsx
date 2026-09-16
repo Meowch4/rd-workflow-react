@@ -11,7 +11,6 @@ import { equipmentTemplatesData } from "../../mocks/equipmentTemplates";
 import type { AppOutletContext } from "../../types/app";
 import type { AuditRecord } from "../../types/audit";
 import type { EquipmentParameters } from "../../types/parameters";
-import type { WorkflowStepSummary } from "../../types/workflow";
 import { getParameterChanges } from "../../utils/parameterChanges";
 import {
   approveWorkflowStep,
@@ -25,6 +24,10 @@ import {
   rejectWorkflowStep,
   type RejectWorkflowFailureReason,
 } from "../../domain/workflow/rejectWorkflowStep";
+import {
+  resubmitWorkflowStep,
+  type ResubmitWorkflowFailureReason,
+} from "../../domain/workflow/resubmitWorkflowStep";
 
 // 把Approve失败消息数据转成显示用的字符串
 const approveFailureMessages: Record<ApproveWorkflowFailureReason, string> = {
@@ -46,6 +49,13 @@ const rejectFailureMessages: Record<RejectWorkflowFailureReason, string> = {
   NO_PROCESSING_STEP: "No workflow step is currently available for rejection.",
   NOT_ASSIGNEE: "You are not assigned to the current workflow step.",
   REASON_REQUIRED: "A reject reason is required.",
+};
+
+const resubmitFailureMessages: Record<ResubmitWorkflowFailureReason, string> = {
+  CHANGE_REQUEST_NOT_IN_REWORK: "This change request is not in rework.",
+  PARAMETERS_UNCHANGED: "Save at least one parameter change before resubmitting.",
+  NO_PROCESSING_STEP: "No rework step is currently available for resubmission.",
+  NOT_ASSIGNEE: "You are not assigned to the current rework step.",
 };
 
 export default function ChangeRequestDetailPage() {
@@ -225,85 +235,36 @@ export default function ChangeRequestDetailPage() {
   }
 
   function handleResubmit() {
-    if (!changeRequest || changeRequest.status !== "REWORK") return;
+    if (!changeRequest) return;
     if (!rejectedParameters) return;
-    const parameterChanges = getParameterChanges(
-      rejectedParameters,
-      savedParameters,
-    );
-    if (parameterChanges.length === 0) return;
-
-    // 找到当前正在进行的step的索引
-    const reworkStepIndex = currentWorkflowSteps.findIndex(
-      (step) => step.status === "PROCESSING",
-    );
-    if (reworkStepIndex === -1) return;
-
-    const reworkStepToSubmit = currentWorkflowSteps[reworkStepIndex];
-    if (reworkStepToSubmit.assigneeId !== currentUser.id) return;
-
-    // 找到离Rework这步前面最近的被Reject的step，作为新建Review step的模板
-    const rejectedReviewStep = currentWorkflowSteps
-      .slice(0, reworkStepIndex)
-      .reverse()
-      .find((step) => step.status === "REJECTED");
-    if (!rejectedReviewStep) return;
 
     const resubmittedAt = new Date().toISOString();
-    const newReviewStep: WorkflowStepSummary = {
-      id: `${currentChangeRequestId}-review-${Date.now()}`,
-      changeRequestId: currentChangeRequestId,
-      name: rejectedReviewStep.name,
-      assigneeId: rejectedReviewStep.assigneeId,
-      assigneeName: rejectedReviewStep.assigneeName,
-      status: "PROCESSING",
-      completedAt: null,
-      comment: null,
-    };
+    const result = resubmitWorkflowStep({
+      changeRequest,
+      workflowSteps,
+      actor: currentUser,
+      rejectedParameters,
+      savedParameters,
+      resubmittedAt,
+      reviewStepId: `${currentChangeRequestId}-review-${Date.now()}`,
+    });
 
-    // 依然把原来的step一变二，插入一个新的Review step
-    setWorkflowSteps((current) =>
-      current.flatMap((step) =>
-        step.id === reworkStepToSubmit.id
-          ? [
-              {
-                ...step,
-                status: "APPROVED" as const,
-                completedAt: resubmittedAt,
-              },
-              newReviewStep,
-            ]
-          : step,
-      ),
-    );
+    if (!result.success) {
+      void message.warning(resubmitFailureMessages[result.reason]);
+      return;
+    }
 
-    // 修改changeRequest的状态和disgner信息
+    setWorkflowSteps(result.workflowSteps);
+
     setChangeRequests((current) =>
       current.map((request) =>
         request.id === currentChangeRequestId
-          ? {
-              ...request,
-              status: "IN_REVIEW",
-              currentStepName: newReviewStep.name,
-              currentAssigneeName: newReviewStep.assigneeName,
-              updatedAt: resubmittedAt,
-            }
+          ? result.changeRequest
           : request,
       ),
     );
 
-    // Resubmit后加入一条历史记录
-    appendAuditRecord({
-      changeRequestId: currentChangeRequestId,
-      stepId: reworkStepToSubmit.id,
-      stepName: reworkStepToSubmit.name,
-      actorId: currentUser.id,
-      actorName: currentUser.name,
-      action: "RESUBMIT",
-      createdAt: resubmittedAt,
-      comment: null,
-      parameterChanges,
-    });
+    appendAuditRecord(result.auditRecord);
   }
 
   function handleReject(reason: string) {
