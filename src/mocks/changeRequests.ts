@@ -86,9 +86,9 @@ export const changeRequestsData: ChangeRequestSummary[] = [
     projectId: "03-2026",
     requestNumber: "CR-2026-009",
     title: "Optimize coolant flow configuration",
-    status: "IN_REVIEW",
-    currentStepName: "Mechanical Review",
-    currentAssigneeName: "Rick Sanchez",
+    status: "COMPLETED",
+    currentStepName: "Completed",
+    currentAssigneeName: null,
     updatedAt: "2026-08-30",
   },
   {
