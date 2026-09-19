@@ -1,59 +1,86 @@
-import { useState } from "react";
-import { NavLink, Outlet } from "react-router";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router";
+import { message, Modal } from "antd";
 import useAuth from "../auth/useAuth";
 import UserSwitcher from "../components/users/UserSwitcher";
-import { auditRecordsData } from "../mocks/auditRecords";
-import { changeRequestsData } from "../mocks/changeRequests";
 import { usersData } from "../mocks/currentUser";
-import { originalParameterSnapshotsData } from "../mocks/parameters";
-import { projectsData } from "../mocks/projects";
-import { workflowStepsData } from "../mocks/workflowSteps";
+import {
+  loadDemoData,
+  resetDemoData,
+  saveDemoData,
+} from "../storage/demoDataStorage";
 import type { AppOutletContext } from "../types/app";
-import type { EquipmentParameters } from "../types/parameters";
-
-function createEditableParameterSnapshots(): Record<
-  string,
-  EquipmentParameters
-> {
-  return Object.fromEntries(
-    Object.entries(originalParameterSnapshotsData).map(([id, parameters]) => [
-      id,
-      { ...parameters },
-    ]),
-  );
-}
-
-function createRejectedParameterSnapshots(): Record<
-  string,
-  EquipmentParameters
-> {
-  return changeRequestsData.reduce<Record<string, EquipmentParameters>>(
-    (snapshots, request) => {
-      const parameters = originalParameterSnapshotsData[request.id];
-
-      if (request.status === "REWORK" && parameters) {
-        snapshots[request.id] = { ...parameters };
-      }
-
-      return snapshots;
-    },
-    {},
-  );
-}
 
 export default function AppLayout() {
     const { currentUser, switchUser, signOut } = useAuth();
-    const [projects, setProjects] = useState(projectsData);
-    const [changeRequests, setChangeRequests] = useState(changeRequestsData);
-    const [workflowSteps, setWorkflowSteps] = useState(workflowStepsData);
-    const [auditRecords, setAuditRecords] = useState(auditRecordsData);
+    const navigate = useNavigate();
+    // 初始数据由提取出的载入DemoData函数提供，内层原理是从LocalStorage取出存储的数据
+    const [initialDemoData] = useState(loadDemoData);
+    const [projects, setProjects] = useState(initialDemoData.data.projects);
+    const [changeRequests, setChangeRequests] = useState(
+      initialDemoData.data.changeRequests,
+    );
+    const [workflowSteps, setWorkflowSteps] = useState(
+      initialDemoData.data.workflowSteps,
+    );
+    const [auditRecords, setAuditRecords] = useState(
+      initialDemoData.data.auditRecords,
+    );
     const [originalParameterSnapshots, setOriginalParameterSnapshots] =
-      useState(createEditableParameterSnapshots);
+      useState(initialDemoData.data.originalParameterSnapshots);
     const [parameterSnapshots, setParameterSnapshots] = useState(
-      createEditableParameterSnapshots,
+      initialDemoData.data.parameterSnapshots,
     );
     const [rejectedParameterSnapshots, setRejectedParameterSnapshots] =
-      useState(createRejectedParameterSnapshots);
+      useState(initialDemoData.data.rejectedParameterSnapshots);
+
+    // 每次state变化都把当前数据存到localStorage里持久化 
+    useEffect(() => {
+      saveDemoData({
+        version: 1,
+        projects,
+        changeRequests,
+        workflowSteps,
+        auditRecords,
+        originalParameterSnapshots,
+        parameterSnapshots,
+        rejectedParameterSnapshots,
+      });
+    }, [
+      projects,
+      changeRequests,
+      workflowSteps,
+      auditRecords,
+      originalParameterSnapshots,
+      parameterSnapshots,
+      rejectedParameterSnapshots,
+    ]);
+
+    // 如果recoveredFromInvalidStorage为true，说明LocalStorage存储的数据有错误，直接恢复原始数据
+    useEffect(() => {
+      if (initialDemoData.recoveredFromInvalidStorage) {
+        void message.warning(
+          // 存储的demo data 无效，所以重新设置demo data
+          "Stored demo data was invalid, so the initial demo data was restored.",
+        );
+      }
+    }, [initialDemoData.recoveredFromInvalidStorage]);
+
+    // 重置demo data，同时登出，跳转页面
+    function handleResetDemoData() {
+      Modal.confirm({
+        title: "Reset demo data?",
+        content:
+          "All projects, workflow changes, parameter edits, and audit records will return to their initial demo values.",
+        okText: "Reset and sign out",
+        okButtonProps: { danger: true },
+        onOk: () => {
+          resetDemoData();
+          signOut();
+          navigate("/login", { replace: true });
+        },
+      });
+    }
     // 如果没有当前用户，直接返回 null，不渲染任何内容 
     if (!currentUser) return null;
 
@@ -125,6 +152,13 @@ export default function AppLayout() {
               currentUserId={currentUser.id}
               onUserChange={switchUser}
             />
+            <button
+              type="button"
+              onClick={handleResetDemoData}
+              className="text-sm font-medium text-amber-600 hover:text-amber-700"
+            >
+              Reset demo data
+            </button>
             <button
               type="button"
               onClick={signOut}
