@@ -1,6 +1,7 @@
 # Logs
 logs
 *.log
+project-resume-facts.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
