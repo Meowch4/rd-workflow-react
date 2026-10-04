@@ -4,6 +4,12 @@
 
 当前版本是**纯前端演示版**，使用 Mock 用户和浏览器本地存储，不包含真实后端或安全认证。
 
+## 在线演示
+
+[打开 RD Workflow 在线演示](https://rd-workflow-react.onrender.com)
+
+进入 Login 页面后可直接选择不同角色的 Mock 用户，无需注册账号。推荐按照下方的“推荐演示流程”体验 Reject、Rework、Resubmit 和顺序审批的完整业务闭环。
+
 ## 已实现功能
 
 - Project 列表、搜索、状态筛选、排序、详情与创建
@@ -51,13 +57,13 @@ npm run build   # TypeScript 检查与生产构建
 
 ## 技术栈
 
-React、TypeScript、Vite、React Router、Tailwind CSS、Ant Design、Vitest、ESLint。
+React、TypeScript、Vite、React Router、Tailwind CSS、Ant Design、Vitest、ESLint；前端演示通过 Render Static Site 部署。
 
 ## 当前边界
 
 - 登录是 Mock 身份选择；前端按钮隐藏和检查仅用于演示交互，不构成真实安全控制。
 - 数据只保存在当前浏览器中，未连接 API 或数据库；清除站点数据会丢失本地操作记录。
-- 目前未实现真实后端认证、服务端权限校验、并发审批处理或在线部署。
+- 目前未实现真实后端认证、服务端权限校验或并发审批处理；线上版本仍是基于 Mock 数据的纯前端演示。
 - Project 的完整生命周期规则尚未实现；当前主要闭环是 **Change Request 的顺序审批流程**。
 
-后续全栈阶段计划引入 Express、PostgreSQL、Prisma 和真实 API，由服务端负责授权、事务与审计记录。
+后续全栈阶段计划引入 NestJS、PostgreSQL、Prisma 和真实 API，由服务端负责认证、授权、事务与审计记录。
