@@ -4,6 +4,12 @@
 
 当前版本是**纯前端演示版**，使用 Mock 用户和浏览器本地存储，不包含真实后端或安全认证。
 
+## 在线演示
+
+[打开 RD Workflow 在线演示](https://rd-workflow-react.onrender.com)
+
+进入 Login 页面后可直接选择不同角色的 Mock 用户，无需注册账号。推荐按照下方的“推荐演示流程”体验 Reject、Rework、Resubmit 和顺序审批的完整业务闭环。
+
 ## 已实现功能
 
 - Project 列表、搜索、状态筛选、排序、详情与创建
